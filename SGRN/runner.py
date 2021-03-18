@@ -1,10 +1,11 @@
 import SGRN.GAERunner as GAE
+import SGRN.makeInputs as mI
 
 
 from pathlib import Path
 
 
-InputMapper = {'GAE':GAE.generateInputs,
+InputMapper = {'GAE':mI.generateInputs,
                  }
 
 
@@ -32,14 +33,18 @@ class Runner(object):
         self.inputDir = params['inputDir']
         self.params = params['params']
         self.exprData = params['exprData']
-        self.cellData = params['cellData']
+        self.trueEdges = params['trueEdges']      
+        self.kTrain = params['kTrain']      
+        self.kTest = params['kTest']      
+        self.randSeed = params['randSeed']      
         
     def generateInputs(self):
         InputMapper[self.name](self)
         
         
     def run(self):
-        AlgorithmMapper[self.name](self)
+        for fID in range(10):
+            AlgorithmMapper[self.name](self, fID)
 
 
     def parseOutput(self):

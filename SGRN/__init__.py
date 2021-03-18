@@ -31,11 +31,14 @@ import pandas as pd
 
 class InputSettings(object):
     def __init__(self,
-            datadir, datasets, algorithms) -> None:
+            datadir, datasets, algorithms, kTrain, kTest, randSeed) -> None:
 
         self.datadir = datadir
         self.datasets = datasets
         self.algorithms = algorithms
+        self.kTrain = kTrain
+        self.kTest = kTest
+        self.randSeed = randSeed
 
 
 class OutputSettings(object):
@@ -81,8 +84,11 @@ class SGRN(object):
                 data['params'] = runner[1]
                 data['inputDir'] = Path.cwd().joinpath(self.input_settings.datadir.joinpath(dataset['name']))
                 data['exprData'] = dataset['exprData']
-                data['cellData'] = dataset['cellData']
                 data['trueEdges'] = dataset['trueEdges']
+                data['kTrain'] = self.input_settings.kTrain
+                data['kTest'] = self.input_settings.kTest
+                data['randSeed'] = self.input_settings.randSeed
+
 
                 if 'should_run' in data['params'] and \
                         data['params']['should_run'] is False:
@@ -125,9 +131,9 @@ class ConfigParser(object):
     of parameters for the pipeline
     '''
     @staticmethod
-    def parse(config_file_handle) -> BLRun:
+    def parse(config_file_handle) -> SGRN:
         config_map = yaml.load(config_file_handle)
-        return BLRun(
+        return SGRN(
             ConfigParser.__parse_input_settings(
                 config_map['input_settings']),
             ConfigParser.__parse_output_settings(
@@ -138,12 +144,16 @@ class ConfigParser(object):
         input_dir = input_settings_map['input_dir']
         dataset_dir = input_settings_map['dataset_dir']
         datasets = input_settings_map['datasets']
+        kTrain = input_settings_map['kTrain']
+        kTest = input_settings_map['kTest']
+        randSeed = input_settings_map['randSeed']
 
         return InputSettings(
                 Path(input_dir, dataset_dir),
                 datasets,
                 ConfigParser.__parse_algorithms(
-                input_settings_map['algorithms']))
+                input_settings_map['algorithms']),
+                kTrain, kTest, randSeed)
 
 
     @staticmethod

@@ -23,6 +23,7 @@ import SGRN as sr
 yaml.warnings({'YAMLLoadWarning': False})
 
 
+
 def get_parser() -> argparse.ArgumentParser:
     '''
     :return: an argparse ArgumentParser object for parsing command
@@ -52,7 +53,7 @@ def main():
 
 
     with open(config_file, 'r') as conf:
-        evaluation = br.ConfigParser.parse(conf)
+        evaluation = sr.ConfigParser.parse(conf)
     print(evaluation)
     print('Evaluation started')
 
