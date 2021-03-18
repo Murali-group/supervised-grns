@@ -201,33 +201,4 @@ def run(RunnerObj, fID):
     print(z.shape, epr, ap, len(test_posIdx))
     
 def parseOutput(RunnerObj):
-    '''
-    Function to parse outputs from LEAP.
-    '''
-    outDir = "outputs/"+str(RunnerObj.inputDir).split("inputs/")[1]+"/GCN-"+RunnerObj.params.decoder+"/"
 
-    PTData = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.cellData),
-                             header = 0, index_col = 0)
-
-    colNames = PTData.columns
-    OutSubDF = [0]*len(colNames)
-
-    for indx in range(len(colNames)):
-        outFileName = 'outFile'+str(indx)+'.txt'
-        # Quit if output file does not exist
-        if not Path(outDir+outFileName).exists():
-            print(outDir+outFileName+' does not exist, skipping...')
-            return
-        
-        # Read output
-        OutSubDF[indx] = pd.read_csv(outDir+outFileName, sep = '\t', header = 0)
-        OutSubDF[indx].Score = np.abs(OutSubDF[indx].Score)
-    outDF = pd.concat(OutSubDF)
-    FinalDF = outDF[outDF['Score'] == outDF.groupby(['Gene1','Gene2'])['Score'].transform('max')]
-
-    outFile = open(outDir + 'rankedEdges.csv','w')
-    outFile.write('Gene1'+'\t'+'Gene2'+'\t'+'EdgeWeight'+'\n')
-
-    for idx, row in FinalDF.sort_values(['Score'], ascending = False).iterrows():
-        outFile.write('\t'.join([row['Gene1'],row['Gene2'],str(row['Score'])])+'\n')
-    outFile.close()
