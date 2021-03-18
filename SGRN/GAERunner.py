@@ -200,5 +200,5 @@ def run(RunnerObj, fID):
     z, epr, ap, preds, act = test(data.test_pos_edge_index, data.test_neg_edge_index)
     print(z.shape, epr, ap, len(test_posIdx))
     
-def parseOutput(RunnerObj):
+#def parseOutput(RunnerObj):
 
