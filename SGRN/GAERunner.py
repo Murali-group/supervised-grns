@@ -198,10 +198,6 @@ def run(RunnerObj, fID):
             break
 
     z, epr, ap, auc_score, preds, act = test(data.test_pos_edge_index, data.test_neg_edge_index)
-    f = open(Path(RunnerObj.outputDir).joinpath("outFile.txt"), "a")
-    f.write(str(z.shape)+ ',' + str(epr) + ',' + str(ap) +',' + str(len(test_posIdx)) + "\n")
-    f.close()
-    print("Run complete, going back")
     print(epr, ap, auc_score)
     return act, preds
     
