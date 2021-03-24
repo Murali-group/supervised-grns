@@ -57,8 +57,8 @@ def run(RunnerObj, fID):
         model.eval()
         with torch.no_grad():
             z = model.encode(x, train_pos_edge_index)
-        epr, ap, pred, act = model.test(z, pos_edge_index, neg_edge_index)
-        return z, epr, ap, pred, act
+        epr, ap, auc_score, pred, act = model.test(z, pos_edge_index, neg_edge_index)
+        return z, epr, ap, auc_score, pred, act
 
     def val(pos_edge_index, neg_edge_index):
         model.eval()
@@ -196,9 +196,11 @@ def run(RunnerObj, fID):
 
         if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 1000:
             break
-            
-    z, epr, ap, preds, act = test(data.test_pos_edge_index, data.test_neg_edge_index)
-    print(z.shape, epr, ap, len(test_posIdx))
+
+    z, epr, ap, auc_score, preds, act = test(data.test_pos_edge_index, data.test_neg_edge_index)
+    print(z.shape, epr, ap, auc_score, len(test_posIdx))
+    return act, preds
     
-#def parseOutput(RunnerObj):
+def parseOutput(RunnerObj):
+    pass
 
