@@ -198,13 +198,9 @@ def run(RunnerObj, fID):
             break
 
     z, epr, ap, auc_score, preds, act = test(data.test_pos_edge_index, data.test_neg_edge_index)
-    print(epr, ap, auc_score)
+    print(z.shape, epr, ap, auc_score, len(test_posIdx))
     return act, preds
     
 def parseOutput(RunnerObj):
-    outDir = RunnerObj.outputDir
-    
-    if not Path(outDir).joinpath("outFile.txt").exists():
-        print(outDir+'outFile.txt'+'does not exist, skipping...')
-        return
+    pass
 
