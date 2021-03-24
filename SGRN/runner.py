@@ -38,7 +38,6 @@ class Runner(object):
         self.kTrain = params['kTrain']      
         self.kTest = params['kTest']      
         self.randSeed = params['randSeed']
-        self.outputDir = params['outputDir']
         self.actual = []
         self.predicted = []
         
