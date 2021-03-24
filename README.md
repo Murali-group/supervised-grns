@@ -23,7 +23,7 @@ We recommend using an [Anaconda](https://www.anaconda.com/) environment to run t
 #### Install dependencies
 * supervised-grns pipeline mainly uses ```PyTorch``` framework for its computation, amongst other libraries. We found that installing ```PyTorch``` can be tricky so we split this step into two - 
   * Install ```PyTorch``` and related modules
-  * Install rest of the packages through ``` pip install requirements.txt``
+  * Install rest of the packages through ``` pip install requirements.txt```
 
 
 * In this step, we will install ```PyTorch``` library along with the necessary dependencies.
