@@ -96,7 +96,7 @@ class SGRN(object):
                     continue
 
                 runners[order] = Runner(data)
-                order += 1            
+                order +=1         
         return runners
 
 
