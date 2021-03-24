@@ -17,8 +17,8 @@ input_settings:
     #              edge list format. Required.
     datasets:
         - name: "mESC"
-          exprData: "mESC_BEELINE.csv"
-          trueEdges: "mouse-net.csv"
+          exprData: "hsc_combined1k.csv"
+          trueEdges: "STRINGc700.csv"
           
     # Ratio of Negatives:Positives in Training.
     kTrain: 1
@@ -48,7 +48,7 @@ input_settings:
               decoder: ["IP"] #["IP","NW","RS"]
               hidden: [2]
               channels: [128]
-              epochs: [2000]
+              epochs: [20]
               should_run: [True]
 
 

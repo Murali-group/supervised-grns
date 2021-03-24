@@ -1,5 +1,6 @@
 import SGRN.GAERunner as GAE
 import SGRN.makeInputs as mI
+from SGRN.GAEHelpers import compute_metrics
 
 
 from pathlib import Path
@@ -36,7 +37,10 @@ class Runner(object):
         self.trueEdges = params['trueEdges']      
         self.kTrain = params['kTrain']      
         self.kTest = params['kTest']      
-        self.randSeed = params['randSeed']      
+        self.randSeed = params['randSeed']
+        self.outputDir = params['outputDir']
+        self.actual = []
+        self.predicted = []
         
     def generateInputs(self):
         InputMapper[self.name](self)
@@ -44,7 +48,11 @@ class Runner(object):
         
     def run(self):
         for fID in range(10):
-            AlgorithmMapper[self.name](self, fID)
+            actual, predicted = AlgorithmMapper[self.name](self, fID)
+            self.actual.append(actual)
+            self.predicted.append(predicted)
+
+        compute_metrics(self.actual, self.predicted)
 
 
     def parseOutput(self):

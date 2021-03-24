@@ -1,0 +1,56 @@
+ase==3.21.1
+backcall @ file:///home/ktietz/src/ci/backcall_1611930011877/work
+cached-property==1.5.2
+certifi==2020.12.5
+chardet==4.0.0
+cycler==0.10.0
+decorator @ file:///home/ktietz/src/ci/decorator_1611930055503/work
+googledrivedownloader==0.4
+h5py==3.2.1
+idna==2.10
+ipython @ file:///tmp/build/80754af9/ipython_1614615642284/work
+ipython-genutils @ file:///tmp/build/80754af9/ipython_genutils_1606773439826/work
+isodate==0.6.0
+jedi==0.17.0
+Jinja2==2.11.3
+joblib==1.0.1
+kiwisolver==1.3.1
+llvmlite==0.35.0
+MarkupSafe==1.1.1
+matplotlib==3.3.4
+mkl-fft==1.3.0
+mkl-random==1.1.1
+mkl-service==2.3.0
+networkx==2.5
+numba==0.52.0
+numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1603479632437/work
+olefile==0.46
+pandas==1.2.3
+parso @ file:///tmp/build/80754af9/parso_1607623074025/work
+pexpect @ file:///tmp/build/80754af9/pexpect_1605563209008/work
+pickleshare @ file:///tmp/build/80754af9/pickleshare_1606932040724/work
+Pillow @ file:///tmp/build/80754af9/pillow_1615057347459/work
+prompt-toolkit @ file:///tmp/build/80754af9/prompt-toolkit_1602688806899/work
+ptyprocess @ file:///tmp/build/80754af9/ptyprocess_1609355006118/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
+Pygments @ file:///tmp/build/80754af9/pygments_1613849567472/work
+pyparsing==2.4.7
+python-dateutil==2.8.1
+python-louvain==0.15
+pytz==2021.1
+rdflib==5.0.0
+requests==2.25.1
+scikit-learn==0.24.1
+scipy==1.6.1
+six @ file:///tmp/build/80754af9/six_1605205313296/work
+threadpoolctl==2.1.0
+torch==1.7.1
+torch-geometric==1.6.3
+torch-scatter==2.0.6
+torch-sparse==0.6.8
+torchaudio==0.7.0a0+a853dff
+torchvision==0.8.2
+tqdm==4.59.0
+traitlets @ file:///home/ktietz/src/ci/traitlets_1611929699868/work
+typing-extensions @ file:///home/ktietz/src/ci_mi/typing_extensions_1612808209620/work
+urllib3==1.26.3
+wcwidth @ file:///tmp/build/80754af9/wcwidth_1593447189090/work

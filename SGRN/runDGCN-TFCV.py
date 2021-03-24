@@ -257,11 +257,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Parse arguments.')
 
     parser.add_argument('-e','--expFile', 
-                        default = '/home/adyprat/2019-06-01-DeepGRN/scanorama/data/hsc/hsc_combined1k.csv',
+                        default = '/home/malabika/GRN/hsc_combined1k.csv',
                         help='Path to expression data file.Required. \n')
 
     parser.add_argument('-n','--netFile', 
-                        default = 'MouseNetworks/STRINGc700.csv',
+                        default = '/home/malabika/GRN/STRINGc700.csv',
                         help='Path to network file.Required. \n')
 
     parser.add_argument('-t','--test', type=int, default = 0.3,
@@ -376,8 +376,8 @@ negE = np.zeros((len(possibleEdges)-len(UnDirGr.edges()),2))
 #print(posX.shape, negX.shape, len(NodeLst))
 
 if opts.ignoreComp:
-    posE = np.load('/home/adyprat/posE.npy').astype(int)
-    negE = np.load('/home/adyprat/negE.npy').astype(int)
+    posE = np.load('/home/malabika/GRN/posE.npy').astype(int)
+    negE = np.load('/home/malabika/GRN/negE.npy').astype(int)
 else:
     for edge in tqdm(possibleEdges):
         if edge in newUnDirGr.edges():
@@ -386,8 +386,8 @@ else:
         else:
             negE[nCnt] = edge
             nCnt += 1
-    np.save('/home/adyprat/posE',posE)
-    np.save('/home/adyprat/negE',negE)
+    np.save('/home/malabika/GRN/posE',posE)
+    np.save('/home/malabika/GRN/negE',negE)
     sys.exit()
 
 

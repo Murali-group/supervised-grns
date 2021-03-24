@@ -257,11 +257,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Parse arguments.')
 
     parser.add_argument('-e','--expFile', 
-                        default = '/home/adyprat/2019-06-01-DeepGRN/scanorama/data/hsc/hsc_combined1k.csv',
+                        default = '/home/malabika/GRN/hsc_combined1k.csv',
                         help='Path to expression data file.Required. \n')
 
     parser.add_argument('-n','--netFile', 
-                        default = 'MouseNetworks/STRINGc700.csv',
+                        default = '/home/malabika/GRN/STRINGc700.csv',
                         help='Path to network file.Required. \n')
 
     parser.add_argument('-t','--test', type=int, default = 0.3,

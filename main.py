@@ -54,7 +54,6 @@ def main():
 
     with open(config_file, 'r') as conf:
         evaluation = sr.ConfigParser.parse(conf)
-    print(evaluation)
     print('Evaluation started')
 
 
@@ -62,6 +61,7 @@ def main():
         evaluation.runners[idx].generateInputs()
 
     for idx in range(len(evaluation.runners)):
+        print("Running %s"%evaluation.runners[idx].__class__.mro())
         evaluation.runners[idx].run()
 
     for idx in range(len(evaluation.runners)):

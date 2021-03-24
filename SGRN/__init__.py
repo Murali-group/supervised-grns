@@ -88,6 +88,7 @@ class SGRN(object):
                 data['kTrain'] = self.input_settings.kTrain
                 data['kTest'] = self.input_settings.kTest
                 data['randSeed'] = self.input_settings.randSeed
+                data['outputDir'] = Path.cwd().joinpath(self.output_settings.base_dir.joinpath(self.output_settings.output_prefix))
 
 
                 if 'should_run' in data['params'] and \
@@ -96,7 +97,7 @@ class SGRN(object):
                     continue
 
                 runners[order] = Runner(data)
-                order += 1            
+                order += 1         
         return runners
 
 
