@@ -39,7 +39,7 @@ import networkx as nx
 import math
 import random
 import torch
-from sklearn.metrics import roc_auc_score, average_precision_score, precision_score, precision_recall_curve
+from sklearn.metrics import roc_auc_score, average_precision_score, precision_score, precision_recall_curve, auc
 from torch_geometric.utils import to_undirected, negative_sampling
 from torch_geometric.nn.models import InnerProductDecoder
 from torch_geometric.nn.inits import reset
@@ -52,7 +52,16 @@ def precision_at_k(y_true, y_score, k):
     df = df[df.score >= threshold]
     return df.true.sum()/df.shape[0]
 
+def compute_metrics(actual, predicted):
+    y_true = np.concatenate(actual)
+    y_predicted = np.concatenate(predicted)
+    compute_auc(y_true, y_predicted)
 
+def compute_auc(y_true, y_predicted):
+    precision, recall, _ = precision_recall_curve(y_true, y_predicted)
+    auc_score = auc(recall, precision)
+    print("Overall AUC=%.4f" %auc_score)
+    return auc_score
 
 def parse_arguments():
     '''
@@ -148,9 +157,10 @@ class GAEwithK(torch.nn.Module):
 
         y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
         pr, rec, thresholds = precision_recall_curve(y, pred)
+        auc_score = auc(rec, pr)
         #pd.DataFrame([y, pred], index = ['true','pred']).T.to_csv('preds.csv')
         #pd.DataFrame([pr, rec, thresholds], index = ['pr','rec','thres']).T.to_csv('pr.csv')
-        return precision_at_k(y, pred, pos_edge_index.size(1)),average_precision_score(y, pred), pred, y
+        return precision_at_k(y, pred, pos_edge_index.size(1)),average_precision_score(y, pred), auc_score, pred, y
 
     
 
