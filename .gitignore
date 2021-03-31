@@ -1,0 +1,6 @@
+SGRN/__pycache__/**
+SGRN/*.npy
+SGRN/*.csv
+*.sh
+inputs/**
+outputs/** 
