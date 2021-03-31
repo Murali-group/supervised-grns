@@ -49,6 +49,7 @@ input_settings:
               hidden: [2]
               channels: [128]
               epochs: [2000]
+              kFolds: [10]
               should_run: [True]
 
 

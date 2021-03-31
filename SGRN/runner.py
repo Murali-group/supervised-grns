@@ -36,14 +36,14 @@ class Runner(object):
         self.trueEdges = params['trueEdges']      
         self.kTrain = params['kTrain']      
         self.kTest = params['kTest']      
-        self.randSeed = params['randSeed']      
+        self.randSeed = params['randSeed']  
         
     def generateInputs(self):
         InputMapper[self.name](self)
         
         
     def run(self):
-        for fID in range(10):
+        for fID in range(self.params['kFolds']):
             AlgorithmMapper[self.name](self, fID)
 
 

@@ -127,8 +127,8 @@ def generateInputs(RunnerObj):
     print("Creating folds: ")
     
     # Create folds
-    cv = KFold(n_splits=10, random_state=RunnerObj.randSeed, shuffle=True)
-    for fID in range(10):
+    cv = KFold(n_splits=RunnerObj.params['kFolds'], random_state=RunnerObj.randSeed, shuffle=True)
+    for fID in range(RunnerObj.params['kFolds']):
         iCnt = 0
         print("Writing inputs for fold:", fID)
         for train_index, test_index in cv.split(posE):
