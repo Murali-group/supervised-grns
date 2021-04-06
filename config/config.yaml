@@ -26,7 +26,7 @@ input_settings:
     kTest: 1
     
     # random seed
-    randSeed: 2019
+    #randSeed: 2019
     
 
     

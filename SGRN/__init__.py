@@ -27,6 +27,7 @@ from typing import Dict, List
 from SGRN.runner import Runner
 import os
 import pandas as pd
+import random
 
 
 class InputSettings(object):
@@ -146,7 +147,11 @@ class ConfigParser(object):
         datasets = input_settings_map['datasets']
         kTrain = input_settings_map['kTrain']
         kTest = input_settings_map['kTest']
-        randSeed = input_settings_map['randSeed']
+        if 'randSeed' in input_settings_map:
+            randSeed = input_settings_map['randSeed']
+        else:
+            randSeed = random.randint(0, 100)
+        print("Using randSeed = %s" %randSeed)
 
         return InputSettings(
                 Path(input_dir, dataset_dir),
