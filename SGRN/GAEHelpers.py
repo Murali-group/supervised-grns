@@ -4,7 +4,7 @@
 # In[1]:
 
 import os.path as osp
-
+import os
 import argparse
 
 import torch.nn as nn
@@ -32,6 +32,7 @@ from itertools import combinations
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.utils import to_undirected, negative_sampling
 import networkx as nx
+from pathlib import Path
 
 
 
@@ -39,7 +40,7 @@ import networkx as nx
 import math
 import random
 import torch
-from sklearn.metrics import roc_auc_score, average_precision_score, precision_score, precision_recall_curve
+from sklearn.metrics import roc_auc_score, average_precision_score, precision_score, precision_recall_curve, auc, roc_curve
 from torch_geometric.utils import to_undirected, negative_sampling
 from torch_geometric.nn.models import InnerProductDecoder
 from torch_geometric.nn.inits import reset
@@ -52,7 +53,36 @@ def precision_at_k(y_true, y_score, k):
     df = df[df.score >= threshold]
     return df.true.sum()/df.shape[0]
 
+def compute_metrics(actual, predicted, outputDir):
+    y_true = np.concatenate(actual)
+    y_predicted = np.concatenate(predicted)
+    compute_auc(y_true, y_predicted, outputDir)
 
+def compute_auc(y_true, y_predicted, outputDir):
+    fpr, tpr, threshold = roc_curve(y_true, y_predicted)
+    auroc_score = auc(fpr, tpr)
+    print("AUROC score = %s"%auroc_score)
+    
+    legend = []
+    plt.plot(fpr, tpr, color='darkorange')
+    legend.append('(AUROC = ' + str("%.2f" % (auroc_score))+')')
+
+    plt.plot([0, 1], [0, 1], linewidth = 1.5, color = 'k', linestyle = '--')
+
+    plt.xlim(0,1)    
+    plt.ylim(0,1)
+    plt.xlabel('FPR')
+    plt.ylabel('TPR')
+    plt.legend(legend)
+    
+    if not osp.exists(outputDir):
+        print("Creating output folder %s"%outputDir)
+        os.makedirs(outputDir)
+
+    plt.savefig(outputDir.joinpath('AUROC.pdf'))
+    plt.savefig(outputDir.joinpath('AUROC.png'))
+    plt.clf()
+    return auroc_score
 
 def parse_arguments():
     '''
@@ -147,7 +177,6 @@ class GAEwithK(torch.nn.Module):
         pred = torch.cat([pos_pred, neg_pred], dim=0)
 
         y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
-        pr, rec, thresholds = precision_recall_curve(y, pred)
         #pd.DataFrame([y, pred], index = ['true','pred']).T.to_csv('preds.csv')
         #pd.DataFrame([pr, rec, thresholds], index = ['pr','rec','thres']).T.to_csv('pr.csv')
         return precision_at_k(y, pred, pos_edge_index.size(1)),average_precision_score(y, pred), pred, y
