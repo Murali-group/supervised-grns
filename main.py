@@ -59,7 +59,6 @@ def main():
         evaluation = sr.ConfigParser.parse(conf)
     print('\n Evaluation started\n')
 
-
     for idx in range(len(evaluation.runners)):
         evaluation.runners[idx].generateInputs()
 
@@ -68,7 +67,7 @@ def main():
 
     for idx in range(len(evaluation.runners)):
         evaluation.runners[idx].parseOutput()
-
+  
     print('\n Evaluation complete!\n')
 
 

@@ -257,11 +257,11 @@ def parseOutput(RunnerObj):
     
     if os.path.isfile(statsAgg):
         outfile = open(statsAgg,'a')
-        outfile.write('{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(),  inDFAgg.shape[0]))
+        outfile.write('{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType))
     else:
         outfile = open(statsAgg, 'w')
-        outfile.write('Algorithm, randID, Early Precision, Average Precision, #positives, #Edges\n')
-        outfile.write('{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(),  inDFAgg.shape[0]))
+        outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,#positives,#edges,CVType\n')
+        outfile.write('{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType))
         
         
     # Write per-fold statistics
@@ -277,9 +277,12 @@ def parseOutput(RunnerObj):
                                                        earlyPrec, avgPrec,  subDF.TrueScore.sum(),  subDF.shape[0], RunnerObj.CVType))
         else:
             outfile = open(statsperFold, 'w')
-            outfile.write('Fold, Algorithm, randID, Early Precision, Average Precision, #positives, #Edges, CVType\n')
+            outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,#positives,#edges,CVType\n')
             outfile.write('{}, {},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
-                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),  subDF.shape[0],RunnerObj.CVType))
-        
+                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),
+                                                       subDF.shape[0],RunnerObj.CVType))
+    
+    
+
     return 
 
