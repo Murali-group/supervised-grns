@@ -106,24 +106,28 @@ def run(RunnerObj, fID):
     subNodes = set(sourceNodes).union(set(targetNodes))
     allNodes = set(nodeDict.item().keys())
     missingSet = allNodes.difference(subNodes)
+    presentNodesSet = allNodes.difference(missingSet)
+    presentNodes = np.array(list(presentNodesSet))
     missing = np.array(list(missingSet))
     missingTF = np.array(list(missingSet.intersection(set(onlyTFs))))
     presentTF = np.array(list(set(sourceNodes)))
 
     #print(len(missing)*len(presentTF)+len(sourceNodes)+len(missingTF)*len(allNodes))
+
+    # For missing TFs, additionally add edges outgoing to present node
+    for tf in missingTF:
+        for node in presentNodes:
+            sourceNodes = np.append(sourceNodes, tf)
+            targetNodes = np.append(targetNodes, node)
     
     # find unlinked genes and TFs and have incoming edges from all TFs
     # Note: This is one of the ways to have them be part of the graph
-    for node in missing:
-        for tf in presentTF:
-            sourceNodes = np.append(sourceNodes, tf)
-            targetNodes = np.append(targetNodes, node)
+    if RunnerObj.params['reconnect_unlinked_nodes']:
+        for node in missing:
+            for tf in allNodes:
+                sourceNodes = np.append(sourceNodes, tf)
+                targetNodes = np.append(targetNodes, node)
     
-    # For missing TFs, additionally add edges outgoing to every node
-    for tf in missingTF:
-        for node in allNodes:
-            sourceNodes = np.append(sourceNodes, tf)
-            targetNodes = np.append(targetNodes, node)
             
     nodeFeatures = torch.Tensor(exprDF.values)
     
