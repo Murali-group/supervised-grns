@@ -146,11 +146,11 @@ class GAEwithK(torch.nn.Module):
 
         pred = torch.cat([pos_pred, neg_pred], dim=0)
 
-        y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
-        pr, rec, thresholds = precision_recall_curve(y, pred)
+        trueY, predY = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
+        #pr, rec, thresholds = precision_recall_curve(y, pred)
         #pd.DataFrame([y, pred], index = ['true','pred']).T.to_csv('preds.csv')
         #pd.DataFrame([pr, rec, thresholds], index = ['pr','rec','thres']).T.to_csv('pr.csv')
-        return precision_at_k(y, pred, pos_edge_index.size(1)),average_precision_score(y, pred), pred, y
+        return trueY, predY #precision_at_k(y, pred, pos_edge_index.size(1)),average_precision_score(y, pred), pred, y
 
     
 

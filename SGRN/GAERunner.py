@@ -40,10 +40,15 @@ def run(RunnerObj, fID):
     Function to run GCN algorithm
     Requires the decoder parameter
     '''
-    random.seed(RunnerObj.randSeed)
-    np.random.seed(RunnerObj.randSeed)
-    torch.manual_seed(RunnerObj.randSeed)
+    rSeed = RunnerObj.randSeed
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
+    random.seed(rSeed)
+    np.random.seed(rSeed)
+    torch.manual_seed(rSeed)
+    torch.cuda.manual_seed(rSeed)
+    
     def train():
         model.train()
         optimizer.zero_grad()
@@ -57,8 +62,8 @@ def run(RunnerObj, fID):
         model.eval()
         with torch.no_grad():
             z = model.encode(x, train_pos_edge_index)
-        epr, ap, pred, act = model.test(z, pos_edge_index, neg_edge_index)
-        return z, epr, ap, pred, act
+        yTrue, yPred = model.test(z, pos_edge_index, neg_edge_index)
+        return yTrue, yPred#z, epr, ap, pred, act
 
     def val(pos_edge_index, neg_edge_index):
         model.eval()
@@ -67,17 +72,19 @@ def run(RunnerObj, fID):
         loss = model.recon_loss(z, pos_edge_index, neg_edge_index)
         return loss
 
-    print("Running fold: ", fID)
+    print("\n Running fold: ", fID)
     
     print("Reading necessary input files...")
     
-    exprDF = pd.read_csv(RunnerObj.inputDir.joinpath("temp/normExp.csv"), header = 0, index_col =0)
-    posE = np.load(RunnerObj.inputDir.joinpath("temp/posE.npy"))
-    negE = np.load(RunnerObj.inputDir.joinpath("temp/negE.npy"))
-    nodeDict = np.load(RunnerObj.inputDir.joinpath("temp/nodeDict.npy"), allow_pickle = True)
-    
-    
-    foldData = np.load(RunnerObj.inputDir.joinpath("temp/fold"+str(fID)+".npy"), allow_pickle = True)
+    exprDF = pd.read_csv(RunnerObj.inputDir.joinpath("normExp.csv"), header = 0, index_col =0)
+    posE = np.load(RunnerObj.inputDir.joinpath("posE.npy"))
+    negE = np.load(RunnerObj.inputDir.joinpath("negE.npy"))
+    nodeDict = np.load(RunnerObj.inputDir.joinpath("nodeDict.npy"), allow_pickle = True)
+    geneTFDict = np.load(RunnerObj.inputDir.joinpath("GeneTFs.npy"), allow_pickle = True)
+    onlyGenes = geneTFDict.item().get('Gene')
+    onlyTFs = geneTFDict.item().get('TF')
+                             
+    foldData = np.load(RunnerObj.inputDir.joinpath("{}CV/fold-".format(RunnerObj.CVType)+str(RunnerObj.randSeed)+"-"+str(fID)+".npy"), allow_pickle = True)
     
     train_posIdx = foldData.item().get('train_posIdx')
     test_posIdx = foldData.item().get('test_posIdx')
@@ -92,24 +99,34 @@ def run(RunnerObj, fID):
 
     val_negIdx = random.sample(list(train_negIdx), int(0.1*len(train_negIdx)))
     train_negIdx = list(set(train_negIdx).difference(set(val_negIdx)))
-    
+    #print(val_posIdx,val_negIdx)
     sourceNodes = posE[train_posIdx , 0]
     targetNodes = posE[train_posIdx , 1]
-    #print(sourceNodes)
-    #print(targetNodes)
     
     subNodes = set(sourceNodes).union(set(targetNodes))
     allNodes = set(nodeDict.item().keys())
-    missing = np.array(list(allNodes.difference(subNodes)))
-    # find unlinked nodes and add self-edges
-    sourceNodes = np.append(sourceNodes, missing)
-    targetNodes = np.append(targetNodes, missing)
-    #print(sourceNodes)
-    #print(targetNodes)
-    #print(missing)
-    
-    nodeFeatures = torch.Tensor(exprDF.values)
+    missingSet = allNodes.difference(subNodes)
+    missing = np.array(list(missingSet))
+    missingTF = np.array(list(missingSet.intersection(set(onlyTFs))))
+    presentTF = np.array(list(set(sourceNodes)))
 
+    #print(len(missing)*len(presentTF)+len(sourceNodes)+len(missingTF)*len(allNodes))
+    
+    # find unlinked genes and TFs and have incoming edges from all TFs
+    # Note: This is one of the ways to have them be part of the graph
+    for node in missing:
+        for tf in presentTF:
+            sourceNodes = np.append(sourceNodes, tf)
+            targetNodes = np.append(targetNodes, node)
+    
+    # For missing TFs, additionally add edges outgoing to every node
+    for tf in missingTF:
+        for node in allNodes:
+            sourceNodes = np.append(sourceNodes, tf)
+            targetNodes = np.append(targetNodes, node)
+            
+    nodeFeatures = torch.Tensor(exprDF.values)
+    
     if RunnerObj.params['encoder'] == 'GCN':
         eIndex = to_undirected(torch.LongTensor([sourceNodes, targetNodes]))
     elif RunnerObj.params['encoder'] == 'DGCN':
@@ -164,7 +181,7 @@ def run(RunnerObj, fID):
     if RunnerObj.params['decoder'] == 'IP':
         model = GAEwithK(Encoder(h_sizes)).to(dev)
     elif RunnerObj.params['decoder'] == 'NW':
-        model = GAEwithK(Encoder(h_sizes), TFDecoder(data.num_nodes, TFNames.keys())).to(dev)
+        model = GAEwithK(Encoder(h_sizes), TFDecoder(data.num_nodes, onlyTFs)).to(dev)
     elif RunnerObj.params['decoder'] == 'RS':
         model = GAEwithK(Encoder(h_sizes), RESCALDecoder(channels)).to(dev)
     else:
@@ -188,17 +205,81 @@ def run(RunnerObj, fID):
 
     for epoch in tqdm(range(1, RunnerObj.params['epochs'])):
         TrLoss = train()
+        
         valLoss = val(val_pos_edge_index, val_neg_edge_index)
         #print(los.item())
         lossDict['epoch'].append(epoch)
         lossDict['TrLoss'].append(TrLoss.item())
         lossDict['valLoss'].append(valLoss.item())
-
-        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 1000:
+        # Run until validation loss stabilizes after a certain minimum number of epochs.
+        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 100:
             break
             
-    z, epr, ap, preds, act = test(data.test_pos_edge_index, data.test_neg_edge_index)
-    print(z.shape, epr, ap, len(test_posIdx))
+    yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
+    testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
+    edgeLength = testIndices.shape[1]
+    outMatrix = np.vstack((testIndices, yTrue, yPred, np.array([fID]*edgeLength)))
+    if not os.path.exists(RunnerObj.outPrefix):
+        os.mkdir(RunnerObj.outPrefix)
+    fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder'])
+    if not os.path.exists(fullPath):
+        os.makedirs(fullPath)
+    output_path =  fullPath / 'rankedEdges.csv'
+    if os.path.isfile(output_path) and fID == 0:
+        print("File exists, cleaning up")
+        os.remove(output_path)
+    outDF = pd.DataFrame(outMatrix.T, columns=['Gene1','Gene2','TrueScore','PredScore', 'CVID'])
+    outDF = outDF.astype({'Gene1': int,'Gene2': int, 'CVID': int})
+    #print(outDF.head())
+    outDF['Gene1'] = outDF.Gene1.map(nodeDict.item())
+    outDF['Gene2'] = outDF.Gene2.map(nodeDict.item())
+    outDF.to_csv(output_path, index=False, mode='a', header=not os.path.exists(output_path))
+    
+    
     
 def parseOutput(RunnerObj):
+    # Check if outfile exists
+    fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder'])
+    algName = RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder']
+    if not os.path.isfile(fullPath/'rankedEdges.csv'):
+        print("file does not exist, skipping:", fullPath/'rankedEdges.csv')
+        return 
+    
+    inDF = pd.read_csv(fullPath/'rankedEdges.csv', index_col = None, header = 0)
+    
+    inDFAgg = inDF.sort_values('PredScore', ascending=False).drop_duplicates(subset=['Gene1','Gene2'], keep = 'first')
+    
+    # Write aggregated statistics
+    inDFAgg.reset_index(inplace=True)    
+    earlyPrecAgg = precision_at_k(inDFAgg.TrueScore, inDFAgg.PredScore, inDFAgg.TrueScore.sum())
+    avgPrecAgg = average_precision_score(inDFAgg.TrueScore, inDFAgg.PredScore)
+    statsAgg = Path(str(RunnerObj.outPrefix)) / "statsAggregated.csv".format(RunnerObj.randSeed)
+    
+    if os.path.isfile(statsAgg):
+        outfile = open(statsAgg,'a')
+        outfile.write('{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(),  inDFAgg.shape[0]))
+    else:
+        outfile = open(statsAgg, 'w')
+        outfile.write('Algorithm, randID, Early Precision, Average Precision, #positives, #Edges\n')
+        outfile.write('{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(),  inDFAgg.shape[0]))
+        
+        
+    # Write per-fold statistics
+    for cvid in inDF.CVID.unique():
+        subDF = inDF[inDF.CVID == cvid]
+        earlyPrec = precision_at_k(subDF.TrueScore, subDF.PredScore, subDF.TrueScore.sum())
+        avgPrec = average_precision_score(subDF.TrueScore, subDF.PredScore)
+        statsperFold = Path(str(RunnerObj.outPrefix)) / "statsperFold.csv".format(RunnerObj.randSeed)
+    
+        if os.path.isfile(statsperFold):
+            outfile = open(statsperFold,'a')
+            outfile.write('{}, {},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
+                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),  subDF.shape[0], RunnerObj.CVType))
+        else:
+            outfile = open(statsperFold, 'w')
+            outfile.write('Fold, Algorithm, randID, Early Precision, Average Precision, #positives, #Edges, CVType\n')
+            outfile.write('{}, {},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
+                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),  subDF.shape[0],RunnerObj.CVType))
+        
+    return 
 

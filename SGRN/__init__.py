@@ -27,19 +27,20 @@ from typing import Dict, List
 from SGRN.runner import Runner
 import os
 import pandas as pd
-
-
+import random
+        
 class InputSettings(object):
     def __init__(self,
-            datadir, datasets, algorithms, kTrain, kTest, randSeed) -> None:
+            datadir, datasets, algorithms, kTrain, kTest, randSeeds, kFold, CVType) -> None:
 
         self.datadir = datadir
         self.datasets = datasets
         self.algorithms = algorithms
         self.kTrain = kTrain
         self.kTest = kTest
-        self.randSeed = randSeed
-
+        self.randSeeds = randSeeds
+        self.kFold = kFold
+        self.CVType = CVType
 
 class OutputSettings(object):
     '''
@@ -70,39 +71,40 @@ class SGRN(object):
     def __create_runners(self) -> Dict[int, List[Runner]]:
         '''
         Instantiate the set of runners based on parameters provided via the
-        configuration file. Each runner is supplied an interactome, collection,
-        the set of algorithms to be run, and graphspace credentials, in
-        addition to the custom parameters each runner may or may not define.
+        configuration file.
         '''
         
         runners: Dict[int, Runner] = defaultdict(list)
         order = 0
         for dataset in self.input_settings.datasets:
             for runner in self.input_settings.algorithms:
-                data = {}
-                data['name'] = runner[0]
-                data['params'] = runner[1]
-                data['inputDir'] = Path.cwd().joinpath(self.input_settings.datadir.joinpath(dataset['name']))
-                data['exprData'] = dataset['exprData']
-                data['trueEdges'] = dataset['trueEdges']
-                data['kTrain'] = self.input_settings.kTrain
-                data['kTest'] = self.input_settings.kTest
-                data['randSeed'] = self.input_settings.randSeed
+                for randSeed in self.input_settings.randSeeds:
+                    data = {}
+                    data['name'] = runner[0]
+                    data['params'] = runner[1]
+                    data['inputDir'] = Path.cwd().joinpath(self.input_settings.datadir.joinpath(dataset['name']))
+                    data['exprData'] = dataset['exprData']
+                    data['trueEdges'] = dataset['trueEdges']
+                    data['kTrain'] = self.input_settings.kTrain
+                    data['kTest'] = self.input_settings.kTest
+                    data['kFold'] = self.input_settings.kFold
+                    data['randSeed'] = randSeed
+                    data['outPrefix'] = self.output_settings.base_dir / self.output_settings.output_prefix
+                    data['CVType'] = self.input_settings.CVType
 
+                    if 'should_run' in data['params'] and \
+                            data['params']['should_run'] is False:
+                        print("Skipping %s" % (data['name']))
+                        continue
 
-                if 'should_run' in data['params'] and \
-                        data['params']['should_run'] is False:
-                    print("Skipping %s" % (data['name']))
-                    continue
-
-                runners[order] = Runner(data)
-                order += 1            
+                    runners[order] = Runner(data)
+                    order += 1            
         return runners
 
 
     def execute_runners(self, parallel=False, num_threads=1):
         '''
-        Run each of the algorithms
+        Run each of the algorithms.
         '''
 
         base_output_dir = self.output_settings.base_dir
@@ -146,14 +148,25 @@ class ConfigParser(object):
         datasets = input_settings_map['datasets']
         kTrain = input_settings_map['kTrain']
         kTest = input_settings_map['kTest']
-        randSeed = input_settings_map['randSeed']
+        kFold = input_settings_map['kFold']
+        CVType = input_settings_map['CVType']
+        if 'randSeed' in input_settings_map:
+            randSeeds = input_settings_map['randSeed']
+        elif 'nTimes' in input_settings_map:
+            randSeeds = [random.randint(0, 1000) for x in range(input_settings_map['nTimes'])]
+            print("Using ",randSeeds, "as random seeds")
+        else:
+            print("Either randSeed or nTimes must be specified in the config file.")
+            sys.exit()
+            
+
 
         return InputSettings(
                 Path(input_dir, dataset_dir),
                 datasets,
                 ConfigParser.__parse_algorithms(
                 input_settings_map['algorithms']),
-                kTrain, kTest, randSeed)
+                kTrain, kTest, randSeeds, kFold, CVType)
 
 
     @staticmethod

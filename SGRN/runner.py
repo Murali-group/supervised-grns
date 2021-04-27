@@ -37,13 +37,16 @@ class Runner(object):
         self.kTrain = params['kTrain']      
         self.kTest = params['kTest']      
         self.randSeed = params['randSeed']      
+        self.outPrefix = params['outPrefix']
+        self.kFold = params['kFold']
+        self.CVType = params['CVType']
         
     def generateInputs(self):
         InputMapper[self.name](self)
         
         
     def run(self):
-        for fID in range(10):
+        for fID in range(self.kFold):
             AlgorithmMapper[self.name](self, fID)
 
 
