@@ -57,6 +57,7 @@ input_settings:
               channels: [128]
               epochs: [2000]
               should_run: [True]
+              reconnect_disconnected_nodes: [False]
 
 
 
