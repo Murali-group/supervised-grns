@@ -236,7 +236,7 @@ def run(RunnerObj, fID):
     outDF.to_csv(output_path, index=False, mode='a', header=not os.path.exists(output_path))
     
     
-    
+
 def parseOutput(RunnerObj):
     # Check if outfile exists
     fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder'])
