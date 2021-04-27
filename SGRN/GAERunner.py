@@ -103,28 +103,30 @@ def run(RunnerObj, fID):
     sourceNodes = posE[train_posIdx , 0]
     targetNodes = posE[train_posIdx , 1]
     
-    subNodes = set(sourceNodes).union(set(targetNodes))
+    presentNodesSet = set(sourceNodes).union(set(targetNodes))
     allNodes = set(nodeDict.item().keys())
     missingSet = allNodes.difference(subNodes)
-    presentNodesSet = allNodes.difference(missingSet)
     presentNodes = np.array(list(presentNodesSet))
-    missing = np.array(list(missingSet))
-    missingTF = np.array(list(missingSet.intersection(set(onlyTFs))))
-    presentTF = np.array(list(set(sourceNodes)))
+    missingNodes = np.array(list(missingSet))
+    missingTFs = np.array(list(missingSet.intersection(set(onlyTFs))))
+    presentTFs = np.array(list(set(sourceNodes)))
 
     #print(len(missing)*len(presentTF)+len(sourceNodes)+len(missingTF)*len(allNodes))
 
-    # For missing TFs, additionally add edges outgoing to present node
-    for tf in missingTF:
+    # For missing TFs, additionally add edges outgoing to present nodes
+    for tf in missingTFs:
         for node in presentNodes:
             sourceNodes = np.append(sourceNodes, tf)
             targetNodes = np.append(targetNodes, node)
     
     # find unlinked genes and TFs and have incoming edges from all TFs
+    # Add edges from every TF to every gene that is missing from the network. 
+    # This step helps to connect these genes to the network so that we can transfer information from TFs to these genes 
+    # and potentially compute better embeddings for these genes.
     # Note: This is one of the ways to have them be part of the graph
-    if RunnerObj.params['reconnect_unlinked_nodes']:
-        for node in missing:
-            for tf in allNodes:
+    if RunnerObj.params['reconnect_disconnected_nodes']:
+        for node in missingNodes:
+            for tf in onlyTFs:
                 sourceNodes = np.append(sourceNodes, tf)
                 targetNodes = np.append(targetNodes, node)
     
