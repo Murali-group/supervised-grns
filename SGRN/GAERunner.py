@@ -105,7 +105,7 @@ def run(RunnerObj, fID):
     
     presentNodesSet = set(sourceNodes).union(set(targetNodes))
     allNodes = set(nodeDict.item().keys())
-    missingSet = allNodes.difference(subNodes)
+    missingSet = allNodes.difference(presentNodesSet)
     presentNodes = np.array(list(presentNodesSet))
     missingNodes = np.array(list(missingSet))
     missingTFs = np.array(list(missingSet.intersection(set(onlyTFs))))
