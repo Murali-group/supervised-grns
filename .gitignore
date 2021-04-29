@@ -3,4 +3,4 @@ SGRN/*.npy
 SGRN/*.csv
 *.sh
 inputs/**
-outputs/** 
+outputs/**
