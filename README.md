@@ -40,6 +40,10 @@ We recommend using an [Anaconda](https://www.anaconda.com/) environment to run t
     0.9.0
     ```
   * Finally, the ```PyTorch geometric``` library can be installed by following the steps [here](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html) listed under __Installation via Binaries__
+  
+* For the evaluation, we additionally need R packages. For this install R within the SGRN conda environment using:
+  *   ```conda install r=3.5.0```
+  *   ```R -e "install.packages('https://cran.r-project.org/src/contrib/PRROC_1.3.1.tar.gz', type = 'source')"
 * We now install the rest of the libraries using the ```requirements.txt``` file.
   ```bash 
   pip install requirements.txt
