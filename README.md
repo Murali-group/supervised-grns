@@ -52,8 +52,9 @@ That's it! We can now run the pipeline and check if everything is working fine.
 
 ## Run the pipeline
 
-Navigate to your folder where the code is downloaded. Run the following command to test the running of the pipeline.
+Navigate to your folder where the code is downloaded. Run the following command to run the pipeline.
 ```bash
  python main.py --config=config/config.yaml 
  ```
+ The output is stored under <output_dir>/<output_prefix>/ (the parameter values are obtained from output_settings in the config.yaml). The output folder contains rankedEdges.csv files with the edge list for each algorithm for each random seed and a statsperFold.csv and statsAggregated.csv files containing the evaluation results stored in a tab-separated file. 
 
