@@ -279,7 +279,7 @@ def parseOutput(RunnerObj):
     for cvid in inDF.CVID.unique():
         subDF = inDF[inDF.CVID == cvid]
         earlyPrec = precision_at_k(subDF.TrueScore, subDF.PredScore, subDF.TrueScore.sum())
-        a, b = computePRROC(subDF.TrueScore, subDF.PredScore)
+        AUPRC, AUROC = computePRROC(subDF.TrueScore, subDF.PredScore)
         avgPrec = average_precision_score(subDF.TrueScore, subDF.PredScore)
         statsperFold = Path(str(RunnerObj.outPrefix)) / "statsperFold.csv".format(RunnerObj.randSeed)
     
