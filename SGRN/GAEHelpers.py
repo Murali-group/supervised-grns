@@ -27,12 +27,13 @@ import math
 import random
 
 from itertools import combinations
-
+from sklearn.metrics import precision_recall_curve, roc_curve, auc
 
 from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.utils import to_undirected, negative_sampling
 import networkx as nx
-
+from rpy2.robjects.packages import importr
+from rpy2.robjects import FloatVector
 
 
 # In[3]:
@@ -205,3 +206,15 @@ class RESCALDecoder(torch.nn.Module):
     def reset_parameters(self):
          self.weight.data.normal_(std=1/np.sqrt(self.in_dim))
 
+def computePRROC(yTrue, yPred):
+    prroc = importr('PRROC')
+    prCurve = prroc.pr_curve(scores_class0 = FloatVector(list(yTrue)), 
+              weights_class0 = FloatVector(list(yPred)), curve=True)
+
+
+    fpr, tpr, thresholds = roc_curve(y_true=yTrue,
+                                     y_score=yPred, pos_label=1)
+
+    prec, recall, thresholds = precision_recall_curve(y_true=yTrue,
+                                                      probas_pred=yPred, pos_label=1)
+    return prCurve[1][0], auc(fpr, tpr)

@@ -28,6 +28,7 @@ import torch.utils.data as utils
 from SGRN.GAEHelpers import *
 from sklearn.svm import LinearSVC, SVC
 from sklearn.calibration import CalibratedClassifierCV
+import SGRN.GAERunner as GR
 
 
 
@@ -134,51 +135,6 @@ def run(RunnerObj, fID):
     
 
 def parseOutput(RunnerObj):
-    # Check if outfile exists
-    fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/SVM')
-    algName = 'SVM'
-    if not os.path.isfile(fullPath/'rankedEdges.csv'):
-        print("file does not exist, skipping:", fullPath/'rankedEdges.csv')
-        return 
-    
-    inDF = pd.read_csv(fullPath/'rankedEdges.csv', index_col = None, header = 0)
-    
-    inDFAgg = inDF.sort_values('PredScore', ascending=False).drop_duplicates(subset=['Gene1','Gene2'], keep = 'first')
-    
-    # Write aggregated statistics
-    inDFAgg.reset_index(inplace=True)    
-    earlyPrecAgg = precision_at_k(inDFAgg.TrueScore, inDFAgg.PredScore, inDFAgg.TrueScore.sum())
-    avgPrecAgg = average_precision_score(inDFAgg.TrueScore, inDFAgg.PredScore)
-    statsAgg = Path(str(RunnerObj.outPrefix)) / "statsAggregated.csv".format(RunnerObj.randSeed)
-    
-    if os.path.isfile(statsAgg):
-        outfile = open(statsAgg,'a')
-        outfile.write('{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType))
-    else:
-        outfile = open(statsAgg, 'w')
-        outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,#positives,#edges,CVType\n')
-        outfile.write('{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType))
-        
-        
-    # Write per-fold statistics
-    for cvid in inDF.CVID.unique():
-        subDF = inDF[inDF.CVID == cvid]
-        earlyPrec = precision_at_k(subDF.TrueScore, subDF.PredScore, subDF.TrueScore.sum())
-        avgPrec = average_precision_score(subDF.TrueScore, subDF.PredScore)
-        statsperFold = Path(str(RunnerObj.outPrefix)) / "statsperFold.csv".format(RunnerObj.randSeed)
-    
-        if os.path.isfile(statsperFold):
-            outfile = open(statsperFold,'a')
-            outfile.write('{}, {},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
-                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),  subDF.shape[0], RunnerObj.CVType))
-        else:
-            outfile = open(statsperFold, 'w')
-            outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,#positives,#edges,CVType\n')
-            outfile.write('{}, {},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
-                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),
-                                                       subDF.shape[0],RunnerObj.CVType))
-    
-    
-
+    GR.parseOutput(RunnerObj)
     return 
 
