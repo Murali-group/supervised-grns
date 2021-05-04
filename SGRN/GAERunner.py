@@ -268,11 +268,11 @@ def parseOutput(RunnerObj):
 
     if os.path.isfile(statsAgg):
         outfile = open(statsAgg,'a')
-        outfile.write('{},{},{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType))
+        outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
     else:
         outfile = open(statsAgg, 'w')
-        outfile.write('Algorithm,randID,Early Precision,Average Precision,AUPRC,AUROC,#positives,#edges,CVType\n')
-        outfile.write('{},{},{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType))
+        outfile.write('Algorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+        outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
         
         
     # Write per-fold statistics
@@ -285,15 +285,15 @@ def parseOutput(RunnerObj):
     
         if os.path.isfile(statsperFold):
             outfile = open(statsperFold,'a')
-            outfile.write('{},{},{},{},{},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
+            outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
                                                        earlyPrec, avgPrec, AUPRC, AUROC, subDF.TrueScore.sum(),
-                                                       subDF.shape[0], RunnerObj.CVType,RunnerObj.params))
+                                                       subDF.shape[0], RunnerObj.CVType,str(RunnerObj.params)))
         else:
             outfile = open(statsperFold, 'w')
-            outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,AUPRC,AUROC,#positives,#edges,CVType\n')
-            outfile.write('{},{},{},{},{},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
+            outfile.write('Fold\tAlgorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+            outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
                                                        earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
-                                                       subDF.shape[0],RunnerObj.CVType,RunnerObj.params))
+                                                       subDF.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
             
     return 
 
