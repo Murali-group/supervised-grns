@@ -127,11 +127,11 @@ def generateInputs(RunnerObj):
         for edge in tqdm(possibleEdges):
             if edge in newDirGr.edges():
                 posE[pCnt] = edge
-
+                
                 X = np.hstack([subDFNorm.iloc[edge[0]].values, subDFNorm.iloc[edge[1]].values])
                 posX[pCnt] = X
 
-                # !!!CNNC does not work woth normalized inputs, hence subDFNorm
+                # !!!CNNC does not work with normalized inputs, hence subDF
                 XC, xedges, yedges = np.histogram2d(subDF.iloc[edge[0]].values, subDF.iloc[edge[1]].values, bins = 32)       
                 posX_CNNC[pCnt] = (np.log10(XC.T/subDF.shape[1] + 10 ** -4) + 4)/4
 

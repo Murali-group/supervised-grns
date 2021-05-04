@@ -1,11 +1,18 @@
 import SGRN.GAERunner as GAE
 import SGRN.makeInputs as mI
+import SGRN.CNNCRunner as CNNC
+import SGRN.MLPRunner as MLP
+import SGRN.SVMRunner as SVM
 
 
 from pathlib import Path
 
 
 InputMapper = {'GAE':mI.generateInputs,
+               'CNNC': mI.generateInputs,
+               'MLP': mI.generateInputs,
+               'SVM': mI.generateInputs,
+
                  }
 
 
@@ -13,12 +20,20 @@ InputMapper = {'GAE':mI.generateInputs,
 
 
 AlgorithmMapper = {'GAE':GAE.run,
+                   'CNNC': CNNC.run,
+                   'MLP': MLP.run,
+                   'SVM': SVM.run,
+
                   }
 
 
 
 
 OutputParser = {'GAE':GAE.parseOutput, 
+                'CNNC':CNNC.parseOutput,
+                'MLP':MLP.parseOutput,
+                'SVM':SVM.parseOutput,
+                
             }
 
 

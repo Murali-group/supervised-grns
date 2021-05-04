@@ -153,7 +153,10 @@ class ConfigParser(object):
         if 'randSeed' in input_settings_map:
             randSeeds = input_settings_map['randSeed']
         elif 'nTimes' in input_settings_map:
-            randSeeds = [random.randint(0, 1000) for x in range(input_settings_map['nTimes'])]
+            randSeeds = []
+            for x in range(input_settings_map['nTimes']):
+                random.seed()
+                randSeeds.append(random.randint(0, 1000))
             print("Using ",randSeeds, "as random seeds")
         else:
             print("Either randSeed or nTimes must be specified in the config file.")

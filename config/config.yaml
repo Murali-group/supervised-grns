@@ -52,15 +52,31 @@ input_settings:
         - name: "GAE"
           params:
               encoder: ["GCN","DGCN"]
-              decoder: ["IP"] #,"NW","RS"]
+              decoder: ["IP","NW","RS"]
               hidden: [2]
               channels: [128]
               epochs: [2000]
               should_run: [True]
               reconnect_disconnected_nodes: [False]
 
-
-
+          # CNNC
+        - name: "CNNC"
+          params:
+              log: [False]
+              epochs: [1000]
+              should_run: [True]
+              
+          # MLP
+        - name: "MLP"
+          params:
+              epochs: [1000]
+              should_run: [True]
+          # SVM
+        - name: "SVM"
+          params:
+              maxIter: [2500]
+              should_run: [True]
+              
 # Output Settings: initialize base output folder names
 output_settings:
     # Base output directory
