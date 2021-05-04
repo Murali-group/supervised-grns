@@ -62,6 +62,9 @@ input_settings:
           # CNNC
         - name: "CNNC"
           params:
+              # Set log to False for most datasets!!!
+              # It should be True for datasets from the CNNC paper
+              # i.e., if expression isn't log transformed already
               log: [False]
               epochs: [1000]
               should_run: [True]
