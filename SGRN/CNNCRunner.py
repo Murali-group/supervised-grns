@@ -301,7 +301,7 @@ def run(RunnerObj, fID):
         lossDict['TrLoss'].append(running_loss)
         lossDict['valLoss'].append(valLoss.item())
         # Run until validation loss stabilizes after a certain minimum number of epochs.
-        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 100:
+        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 500:
             break
 
      

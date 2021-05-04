@@ -218,7 +218,7 @@ def run(RunnerObj, fID):
         lossDict['TrLoss'].append(TrLoss.item())
         lossDict['valLoss'].append(valLoss.item())
         # Run until validation loss stabilizes after a certain minimum number of epochs.
-        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 100:
+        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 500:
             break
             
     yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
@@ -285,15 +285,15 @@ def parseOutput(RunnerObj):
     
         if os.path.isfile(statsperFold):
             outfile = open(statsperFold,'a')
-            outfile.write('{},{},{},{},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
+            outfile.write('{},{},{},{},{},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
                                                        earlyPrec, avgPrec, AUPRC, AUROC, subDF.TrueScore.sum(),
-                                                       subDF.shape[0], RunnerObj.CVType))
+                                                       subDF.shape[0], RunnerObj.CVType,RunnerObj.params))
         else:
             outfile = open(statsperFold, 'w')
             outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,AUPRC,AUROC,#positives,#edges,CVType\n')
-            outfile.write('{},{},{},{},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
+            outfile.write('{},{},{},{},{},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
                                                        earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
-                                                       subDF.shape[0],RunnerObj.CVType))
+                                                       subDF.shape[0],RunnerObj.CVType,RunnerObj.params))
             
     return 
 
