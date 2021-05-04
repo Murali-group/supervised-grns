@@ -19,6 +19,9 @@ from SGRN.runner import Runner
 import os
 import pandas as pd
 
+import torch
+import random
+import numpy as np
 import SGRN as sr
 yaml.warnings({'YAMLLoadWarning': False})
 
@@ -54,9 +57,7 @@ def main():
 
     with open(config_file, 'r') as conf:
         evaluation = sr.ConfigParser.parse(conf)
-    print(evaluation)
-    print('Evaluation started')
-
+    print('\n Evaluation started\n')
 
     for idx in range(len(evaluation.runners)):
         evaluation.runners[idx].generateInputs()
@@ -66,9 +67,9 @@ def main():
 
     for idx in range(len(evaluation.runners)):
         evaluation.runners[idx].parseOutput()
-
-    print('Evaluation complete')
+  
+    print('\n Evaluation complete!\n')
 
 
 if __name__ == '__main__':
-  main()
+    main()
