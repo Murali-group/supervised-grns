@@ -218,7 +218,7 @@ def run(RunnerObj, fID):
         lossDict['TrLoss'].append(TrLoss.item())
         lossDict['valLoss'].append(valLoss.item())
         # Run until validation loss stabilizes after a certain minimum number of epochs.
-        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 100:
+        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 500:
             break
             
     yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
@@ -243,9 +243,13 @@ def run(RunnerObj, fID):
     
     
 def parseOutput(RunnerObj):
+    if RunnerObj.name == 'GAE':
+        algName = RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder']
+    else:
+        algName = RunnerObj.name
+           
     # Check if outfile exists
-    fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder'])
-    algName = RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder']
+    fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + algName)
     if not os.path.isfile(fullPath/'rankedEdges.csv'):
         print("file does not exist, skipping:", fullPath/'rankedEdges.csv')
         return 
@@ -259,35 +263,36 @@ def parseOutput(RunnerObj):
     earlyPrecAgg = precision_at_k(inDFAgg.TrueScore, inDFAgg.PredScore, inDFAgg.TrueScore.sum())
     avgPrecAgg = average_precision_score(inDFAgg.TrueScore, inDFAgg.PredScore)
     statsAgg = Path(str(RunnerObj.outPrefix)) / "statsAggregated.csv".format(RunnerObj.randSeed)
-    
+    AUPRC, AUROC = computePRROC(inDFAgg.TrueScore, inDFAgg.PredScore)
+
     if os.path.isfile(statsAgg):
         outfile = open(statsAgg,'a')
-        outfile.write('{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType))
+        outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
     else:
         outfile = open(statsAgg, 'w')
-        outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,#positives,#edges,CVType\n')
-        outfile.write('{},{},{},{},{},{},{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType))
+        outfile.write('Algorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+        outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
         
         
     # Write per-fold statistics
     for cvid in inDF.CVID.unique():
         subDF = inDF[inDF.CVID == cvid]
         earlyPrec = precision_at_k(subDF.TrueScore, subDF.PredScore, subDF.TrueScore.sum())
+        AUPRC, AUROC = computePRROC(subDF.TrueScore, subDF.PredScore)
         avgPrec = average_precision_score(subDF.TrueScore, subDF.PredScore)
         statsperFold = Path(str(RunnerObj.outPrefix)) / "statsperFold.csv".format(RunnerObj.randSeed)
     
         if os.path.isfile(statsperFold):
             outfile = open(statsperFold,'a')
-            outfile.write('{}, {},{},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
-                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),  subDF.shape[0], RunnerObj.CVType))
+            outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
+                                                       earlyPrec, avgPrec, AUPRC, AUROC, subDF.TrueScore.sum(),
+                                                       subDF.shape[0], RunnerObj.CVType,str(RunnerObj.params)))
         else:
             outfile = open(statsperFold, 'w')
-            outfile.write('Fold,Algorithm,randID,Early Precision,Average Precision,#positives,#edges,CVType\n')
-            outfile.write('{}, {},{},{},{},{},{}\n'.format(cvid, algName, RunnerObj.randSeed,
-                                                       earlyPrec, avgPrec,  subDF.TrueScore.sum(),
-                                                       subDF.shape[0],RunnerObj.CVType))
-    
-    
-
+            outfile.write('Fold\tAlgorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+            outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
+                                                       earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
+                                                       subDF.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+            
     return 
 

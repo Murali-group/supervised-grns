@@ -40,6 +40,10 @@ We recommend using an [Anaconda](https://www.anaconda.com/) environment to run t
     0.9.0
     ```
   * Finally, the ```PyTorch geometric``` library can be installed by following the steps [here](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html) listed under __Installation via Binaries__
+  
+* For the evaluation, we additionally need R packages. For this install R within the SGRN conda environment using:
+  *   ```conda install r=3.5.0```
+  *   ```R -e "install.packages('https://cran.r-project.org/src/contrib/PRROC_1.3.1.tar.gz', type = 'source')"```
 * We now install the rest of the libraries using the ```requirements.txt``` file.
   ```bash 
   pip install requirements.txt
@@ -48,8 +52,9 @@ That's it! We can now run the pipeline and check if everything is working fine.
 
 ## Run the pipeline
 
-Navigate to your folder where the code is downloaded. Run the following command to test the running of the pipeline.
+Navigate to your folder where the code is downloaded. Run the following command to run the pipeline.
 ```bash
  python main.py --config=config/config.yaml 
  ```
+ The output is stored under <output_dir>/<output_prefix>/ (the parameter values are obtained from output_settings in the config.yaml). The output folder contains rankedEdges.csv files with the edge list for each algorithm for each random seed and a statsperFold.csv and statsAggregated.csv files containing the evaluation results stored in a tab-separated file. 
 

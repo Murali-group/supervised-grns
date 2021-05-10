@@ -275,7 +275,7 @@ def generateInputs(RunnerObj):
     elif RunnerObj.CVType == 'Node':
         
         # Create folds
-        cv = KFold(n_splits=RunnerObj.kFold, random_state=RunnerObj.randSeed, shuffle=False)
+        cv = KFold(n_splits=RunnerObj.kFold, random_state=RunnerObj.randSeed, shuffle=True)
         for fID in range(RunnerObj.kFold):
             iCnt = 0
             print("Writing inputs for fold:", fID)
