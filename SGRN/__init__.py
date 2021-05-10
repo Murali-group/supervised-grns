@@ -84,7 +84,12 @@ class SGRN(object):
                     data['params'] = runner[1]
                     data['inputDir'] = Path.cwd().joinpath(self.input_settings.datadir.joinpath(dataset['name']))
                     data['exprData'] = dataset['exprData']
+                    data['delim'] = dataset['delim']
                     data['trueEdges'] = dataset['trueEdges']
+                    data['normalization'] = dataset['normalization']
+                    data['min_genes'] = dataset['min_genes']
+                    data['min_cells'] = dataset['min_cells']
+                    data['top_expr_genes'] = dataset['top_expr_genes']
                     data['kTrain'] = self.input_settings.kTrain
                     data['kTest'] = self.input_settings.kTest
                     data['kFold'] = self.input_settings.kFold

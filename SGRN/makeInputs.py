@@ -3,6 +3,8 @@ import os
 import pandas as pd
 from pathlib import Path
 import numpy as np
+import pdb
+import scanpy as sc
 import networkx as nx
 import random
 import math
@@ -11,6 +13,38 @@ import random
 from itertools import combinations, permutations, product
 from tqdm import tqdm 
 from sklearn.model_selection import KFold
+
+def exprdata_stats(adata):
+    print(f'Total number of genes: {adata.n_obs}')
+    print(f'Total number of cells: {adata.n_vars}')
+
+def preprocess_expr(RunnerObj):
+    ExpDF = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.exprData),
+                                 header = 0, index_col = 0,sep = RunnerObj.delim)
+    adata = sc.read_csv(os.path.join(RunnerObj.inputDir.joinpath(RunnerObj.exprData))
+                                     ,delimiter = RunnerObj.delim)
+    adata = adata.transpose()
+    exprdata_stats(adata)
+    if RunnerObj.normalization == '':
+        sc.pp.normalize_total(adata)
+    sc.pp.filter_cells(adata,min_genes = int(RunnerObj.min_genes))
+    sc.pp.filter_genes(adata,min_cells = int(RunnerObj.min_cells))
+    exprdata_stats(adata)
+    
+    flavor = 'seurat'
+    if flavor == 'seurat':
+        sc.pp.log1p(adata)
+        sc.pp.highly_variable_genes(adata)
+    if flavor == 'seurat_v3':
+        sc.pp.highly_variable_genes(adata,flavor = flavor)
+    high_var = adata.var[adata.var.highly_variable == True].index.tolist()
+    expdf = pd.DataFrame(adata.X,index = adata.obs.index,columns = adata.var.index)
+    high_var_expdf = expdf.iloc[:,expdf.columns.isin(high_var)]
+    tf_path = '/home/kradja/supervised-grns/inputs/TFs'
+    tf_file = 'mouse-tfs.csv'
+    tf = pd.read_csv(os.path.join(tf_path,tf_file),sep=',')
+    pdb.set_trace()
+    return expdf
 
 def generateInputs(RunnerObj):
     '''
@@ -59,8 +93,10 @@ def generateInputs(RunnerObj):
         onlyGeness = geneTFDict.item().get('Gene')
     else:
         print("Files not present, creating...")
-        ExpDF = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.exprData),
-                                         header = 0, index_col = 0)
+        ExpDF = preprocess_expr(RunnerObj)
+        # Replacing this line with a method that preprocesses exprData with scanpy
+        #ExpDF = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.exprData),
+        #                                 header = 0, index_col = 0,sep = RunnerObj.delim)
         GeneralChIP = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.trueEdges))
         # convert strings to upper case, just in case.
         GeneralChIP.Gene1 = GeneralChIP.Gene1.str.upper()
@@ -175,6 +211,7 @@ def generateInputs(RunnerObj):
 
         # Create folds
         cv = KFold(n_splits=RunnerObj.kFold, random_state=RunnerObj.randSeed, shuffle=True)
+        pdb.set_trace()
         for fID in range(RunnerObj.kFold):
             iCnt = 0
             print("Writing inputs for fold:", fID)

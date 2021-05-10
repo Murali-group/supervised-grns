@@ -16,10 +16,18 @@ input_settings:
     #   trueEdges: Name of the refrence network file in the
     #              edge list format. Required.
     datasets:
-        - name: "mESC"
-          exprData: "mESC_BEELINE.csv"
+        - name: "mESC_new"
+          exprData: "GSE98664_tpm_sailfish_GENCODEvM9_RamDA_cells.txt"
+          delim: "\t"
           trueEdges: "mouse-net.csv"
-          
+          # Preprocessing
+          normalization: "TPM" #TPM,CPM, None
+          # Minimum number of genes a cell has to have; removing cells
+          min_genes: "200"
+          # Minimum number of cells a gene must be expressed in; removing genes
+          min_cells: "3"
+          top_expr_genes: "200"
+
     # Ratio of Negatives:Positives in Training.
     kTrain: 1
     # Ratio of Negatives:Positives in Testing.
@@ -30,9 +38,9 @@ input_settings:
     # Number of times to run the k-fold CV
     # generates random seed for each run internally
     # stores as part of the inputs and ouput name
-    nTimes: 1
+    nTimes: 10
     # If randSeed is specified, it ignores nTimes!!!
-    randSeed: [774]
+    #randSeed: [774] commenting this out
     # kFold CV type, 'Edge' or 'Node'
     # Edge: Edge CV
     # Node: TF holdout CV
@@ -51,8 +59,8 @@ input_settings:
           # Graph auto-encoder
         - name: "GAE"
           params:
-              encoder: ["GCN","DGCN"]
-              decoder: ["IP","NW","RS"]
+              encoder: ["GCN"] #,"DGCN"]
+              decoder: ["IP"] #,"NW","RS"]
               hidden: [2]
               channels: [128]
               epochs: [2000]
