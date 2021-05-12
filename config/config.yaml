@@ -30,9 +30,9 @@ input_settings:
     # Number of times to run the k-fold CV
     # generates random seed for each run internally
     # stores as part of the inputs and ouput name
-    nTimes: 1
+    nTimes: 10
     # If randSeed is specified, it ignores nTimes!!!
-    randSeed: [774]
+    #randSeed: [774]
     # kFold CV type, 'Edge' or 'Node'
     # Edge: Edge CV
     # Node: TF holdout CV
