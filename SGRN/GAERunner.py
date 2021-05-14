@@ -23,6 +23,8 @@ from torch_geometric.data import Data
 import matplotlib.pyplot as plt
 import numpy as np
 import torchvision
+import logging
+import time
 
 
 from torch.utils.tensorboard import SummaryWriter
@@ -73,7 +75,8 @@ def run(RunnerObj, fID):
         return loss
 
     print("\n Running fold: ", fID)
-    
+    start = time.time()
+
     print("Reading necessary input files...")
     
     exprDF = pd.read_csv(RunnerObj.inputDir.joinpath("normExp.csv"), header = 0, index_col =0)
@@ -218,9 +221,11 @@ def run(RunnerObj, fID):
         lossDict['TrLoss'].append(TrLoss.item())
         lossDict['valLoss'].append(valLoss.item())
         # Run until validation loss stabilizes after a certain minimum number of epochs.
-        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > 500:
+        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > RunnerObj.params['min_epochs']:
             break
-            
+
+    logging.info("[Fold %s]: %.3f seconds in %s epochs" %(fID, time.time()-start, epoch))
+
     yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
     testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
     edgeLength = testIndices.shape[1]
@@ -268,11 +273,11 @@ def parseOutput(RunnerObj):
 
     if os.path.isfile(statsAgg):
         outfile = open(statsAgg,'a')
-        outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+        outfile.write('{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
     else:
         outfile = open(statsAgg, 'w')
         outfile.write('Algorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
-        outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+        outfile.write('{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
         
         
     # Write per-fold statistics
@@ -285,13 +290,13 @@ def parseOutput(RunnerObj):
     
         if os.path.isfile(statsperFold):
             outfile = open(statsperFold,'a')
-            outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
+            outfile.write('{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
                                                        earlyPrec, avgPrec, AUPRC, AUROC, subDF.TrueScore.sum(),
                                                        subDF.shape[0], RunnerObj.CVType,str(RunnerObj.params)))
         else:
             outfile = open(statsperFold, 'w')
             outfile.write('Fold\tAlgorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
-            outfile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
+            outfile.write('{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
                                                        earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
                                                        subDF.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
             

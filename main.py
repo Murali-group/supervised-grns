@@ -23,6 +23,8 @@ import torch
 import random
 import numpy as np
 import SGRN as sr
+import logging
+import time
 yaml.warnings({'YAMLLoadWarning': False})
 
 
@@ -63,8 +65,11 @@ def main():
         evaluation.runners[idx].generateInputs()
 
     for idx in range(len(evaluation.runners)):
+        start_time = time.time()
+        logging.info("Training started for %s with randSeed=%s"%(evaluation.runners[idx].params['encoder']+'-'+evaluation.runners[idx].params['decoder'], evaluation.runners[idx].randSeed))
         evaluation.runners[idx].run()
-
+        logging.info("Training for %s with randSeed=%s completed in %.3f seconds"%(evaluation.runners[idx].params['encoder']+'-'+evaluation.runners[idx].params['decoder'], evaluation.runners[idx].randSeed, time.time()-start_time))
+        
     for idx in range(len(evaluation.runners)):
         evaluation.runners[idx].parseOutput()
   
