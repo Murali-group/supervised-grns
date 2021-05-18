@@ -208,8 +208,8 @@ class RESCALDecoder(torch.nn.Module):
 
 def computePRROC(yTrue, yPred):
     prroc = importr('PRROC')
-    prCurve = prroc.pr_curve(scores_class0 = FloatVector(list(yTrue)), 
-              weights_class0 = FloatVector(list(yPred)), curve=True)
+    prCurve = prroc.pr_curve(scores_class0 = FloatVector(list(yPred)), 
+              weights_class0 = FloatVector(list(yTrue)), curve=True)
 
 
     fpr, tpr, thresholds = roc_curve(y_true=yTrue,
