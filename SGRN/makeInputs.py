@@ -287,11 +287,14 @@ def generateInputs(RunnerObj):
 
     #create a logging file
     if not os.path.exists(RunnerObj.outPrefix):
-        os.makedirs(RunnerObj.outPrefix)    
-    logging.basicConfig(handlers=[logging.FileHandler(filename=os.path.join(RunnerObj.outPrefix, 'log.txt'), 
-                                                 encoding='utf-8', mode='a+')],
-                    format="%(asctime)s %(levelname)s:%(message)s", 
-                    datefmt='%m/%d/%Y %I:%M:%S %p %Z', 
-                    level=logging.INFO)
-    logging.info("Input files created for training and evaluation")
+        os.makedirs(RunnerObj.outPrefix)  
+    
+    logFile = os.path.join(RunnerObj.outPrefix, 'log.txt')
+    if not os.path.exists(logFile):
+
+        logging.basicConfig(handlers=[logging.FileHandler(filename=os.path.join(RunnerObj.outPrefix, 'log.txt'), 
+                                                     encoding='utf-8', mode='a+')],
+                        format="%(asctime)s %(levelname)s:%(message)s", 
+                        datefmt='%m/%d/%Y %I:%M:%S %p %Z', 
+                        level=logging.INFO)
     return

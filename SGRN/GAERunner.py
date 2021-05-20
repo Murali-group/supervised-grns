@@ -75,7 +75,7 @@ def run(RunnerObj, fID):
         return loss
 
     print("\n Running fold: ", fID)
-    start = time.time()
+    start = time.process_time()
 
     print("Reading necessary input files...")
     
@@ -224,7 +224,7 @@ def run(RunnerObj, fID):
         if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > RunnerObj.params['min_epochs']:
             break
 
-    logging.info("[Fold %s]: %.3f seconds in %s epochs" %(fID, time.time()-start, epoch))
+    logging.info("[Fold %s]: %.3f seconds in %s epochs" %(fID, time.process_time()-start, epoch))
 
     yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
     testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
