@@ -56,6 +56,7 @@ input_settings:
               hidden: [2]
               channels: [128]
               epochs: [2000]
+              min_epochs: [1000]
               should_run: [True]
               reconnect_disconnected_nodes: [False]
 
