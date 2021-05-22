@@ -46,7 +46,7 @@ We recommend using an [Anaconda](https://www.anaconda.com/) environment to run t
   *   ```R -e "install.packages('https://cran.r-project.org/src/contrib/PRROC_1.3.1.tar.gz', type = 'source')"```
 * We now install the rest of the libraries using the ```requirements.txt``` file.
   ```bash 
-  pip install requirements.txt
+  pip install -r requirements.txt
   ```
 That's it! We can now run the pipeline and check if everything is working fine.
 
