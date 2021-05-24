@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 from pathlib import Path
@@ -15,36 +14,104 @@ from tqdm import tqdm
 from sklearn.model_selection import KFold
 
 def exprdata_stats(adata):
-    print(f'Total number of genes: {adata.n_obs}')
-    print(f'Total number of cells: {adata.n_vars}')
+    """ Printing Statistics of the single cell RNA sequence datasets including
+    # of genes, # of cells
+    """
+    print(f'Total number of cells: {adata.n_obs}')
+    print(f'Total number of genes: {adata.n_vars}')
+
+def read_in_chunks(fileobj, chunksize=1000000):
+    """
+    Reading in a file lazily in increments of 1,000,000 bytes 1 Megabytes
+    """
+    while True:
+        data = fileobj.read(chunksize)
+        if not data:
+            break
+        yield data
+
+def convert_transcripts_to_genes(RunnerObj):
+    """ Converting transcripts to genes from Ensembl
+    """
+    info_df = []
+    prev_line = ''
+    prev_line2 = ''
+    with open(os.path.join(RunnerObj.inputDir.joinpath(RunnerObj.gtf_file))) as f:
+        for piece in read_in_chunks(f):
+            piece = prev_line + piece
+            for line in piece.split('\n'):
+                if line == piece[piece.rfind('\n')+1:]:
+                    prev_line = line
+                    break
+                if 'gene_name' in line and 'transcript_id' in line:
+                    info = line[line.rfind('\t')+1:]
+                    tmp = {}
+                    for item in info.split('\"; '):
+                        res = item.split(' \"')
+                        if len(res) == 2:
+                            tmp[res[0]] = res[1]
+                    info_df.append([tmp['gene_name'],tmp['transcript_id']]) 
+    tran_gene = pd.DataFrame(info_df)
+    tran_gene.drop_duplicates(keep='first',inplace=True)
+    tran_gene.columns = ['gene_name','transcript']
+    tran_gene.set_index('transcript',inplace=True)
+    return tran_gene
+
+def transcription_factor_percentage(RunnerObj,expdf):
+    """ Number of Transcription Factors in the single cell RNA seq dataset
+    """
+    tf_path = '/home/kradja/supervised-grns/inputs/TFs'
+    tf_file = 'mouse-tfs.csv'
+    tf = pd.read_csv(os.path.join(tf_path,tf_file),sep=',')
+
+    tf_expdf = expdf[expdf.index.isin(tf.TF)]
+    print(f'Out of {len(expdf)} genes there are {len(tf_expdf)} Transcription factors')
+    pdb.set_trace()
+    return tf_expdf
+    
 
 def preprocess_expr(RunnerObj):
+    """
+    Preprocessing single cell RNA sequencing data with inputs from the RunnerObj
+    """
     ExpDF = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.exprData),
                                  header = 0, index_col = 0,sep = RunnerObj.delim)
     adata = sc.read_csv(os.path.join(RunnerObj.inputDir.joinpath(RunnerObj.exprData))
                                      ,delimiter = RunnerObj.delim)
-    adata = adata.transpose()
+    adata = adata.transpose() # AnnData package needs the genes as columns and cells as rows
     exprdata_stats(adata)
+    
+    # Scanpy pre-processing filtering cells and genes and normlaization
     if RunnerObj.normalization == '':
         sc.pp.normalize_total(adata)
     sc.pp.filter_cells(adata,min_genes = int(RunnerObj.min_genes))
     sc.pp.filter_genes(adata,min_cells = int(RunnerObj.min_cells))
     exprdata_stats(adata)
-    
     flavor = 'seurat'
-    if flavor == 'seurat':
+    if flavor == 'seurat' or flavor == 'cell_ranger':
         sc.pp.log1p(adata)
-        sc.pp.highly_variable_genes(adata)
+        sc.pp.highly_variable_genes(adata,flavor = flavor)
     if flavor == 'seurat_v3':
         sc.pp.highly_variable_genes(adata,flavor = flavor)
-    high_var = adata.var[adata.var.highly_variable == True].index.tolist()
-    expdf = pd.DataFrame(adata.X,index = adata.obs.index,columns = adata.var.index)
-    high_var_expdf = expdf.iloc[:,expdf.columns.isin(high_var)]
-    tf_path = '/home/kradja/supervised-grns/inputs/TFs'
-    tf_file = 'mouse-tfs.csv'
-    tf = pd.read_csv(os.path.join(tf_path,tf_file),sep=',')
-    pdb.set_trace()
-    return expdf
+
+    # Taking the top 'x' number of highly variable genes 
+    high_var = adata.var[adata.var.highly_variable == True].sort_values('dispersions_norm',ascending=False)
+    print(f'There are {len(high_var)} highly variable genes out of {len(adata.var)} genes')
+    high_var = high_var[:int(RunnerObj.top_expr_genes)]
+    adata_subset = adata[:, high_var.index]
+
+    # Converting the indices of high_var with gene from transcript
+    tran_gene = convert_transcripts_to_genes(RunnerObj)
+    tt = adata_subset.var.index.to_series()
+    ntt = tt.apply(lambda x: x[:x.rfind('.')])
+    rr = ntt.map(tran_gene.to_dict()['gene_name']).fillna(ntt)
+    adata_subset.var.index = rr
+
+    # gene Irf3 shows up multiple times in the DataFrame. Multiple transcripts map to Irf3. How we take into account duplicates?
+    expdf = pd.DataFrame(adata_subset.X,index = adata_subset.obs.index,columns = adata_subset.var.index)
+    high_var_expdf = expdf.iloc[:,expdf.columns.isin(high_var.index)]
+
+    return expdf.T, adata_subset.var
 
 def generateInputs(RunnerObj):
     '''
@@ -93,10 +160,13 @@ def generateInputs(RunnerObj):
         onlyGeness = geneTFDict.item().get('Gene')
     else:
         print("Files not present, creating...")
-        ExpDF = preprocess_expr(RunnerObj)
+        ExpDF, expr_genes = preprocess_expr(RunnerObj)
+        ExpDF.index = ExpDF.index.str.upper()
+
+        # Percentage of TFs
+        tf_expdf = transcription_factor_percentage(RunnerObj, ExpDF)
+
         # Replacing this line with a method that preprocesses exprData with scanpy
-        #ExpDF = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.exprData),
-        #                                 header = 0, index_col = 0,sep = RunnerObj.delim)
         GeneralChIP = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.trueEdges))
         # convert strings to upper case, just in case.
         GeneralChIP.Gene1 = GeneralChIP.Gene1.str.upper()
@@ -211,7 +281,6 @@ def generateInputs(RunnerObj):
 
         # Create folds
         cv = KFold(n_splits=RunnerObj.kFold, random_state=RunnerObj.randSeed, shuffle=True)
-        pdb.set_trace()
         for fID in range(RunnerObj.kFold):
             iCnt = 0
             print("Writing inputs for fold:", fID)

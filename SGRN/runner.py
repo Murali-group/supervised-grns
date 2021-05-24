@@ -53,6 +53,7 @@ class Runner(object):
         self.min_genes = params['min_genes']
         self.min_cells = params['min_cells']
         self.top_expr_genes = params['top_expr_genes']
+        self.gtf_file= params['gtf_file']
         self.trueEdges = params['trueEdges']      
         self.kTrain = params['kTrain']      
         self.kTest = params['kTest']      

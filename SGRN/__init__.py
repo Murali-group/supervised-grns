@@ -90,6 +90,7 @@ class SGRN(object):
                     data['min_genes'] = dataset['min_genes']
                     data['min_cells'] = dataset['min_cells']
                     data['top_expr_genes'] = dataset['top_expr_genes']
+                    data['gtf_file'] = dataset['gtf_file']
                     data['kTrain'] = self.input_settings.kTrain
                     data['kTest'] = self.input_settings.kTest
                     data['kFold'] = self.input_settings.kFold

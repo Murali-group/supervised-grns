@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import pdb
 from pathlib import Path
 import numpy as np
 import networkx as nx
@@ -27,7 +28,7 @@ from torch_geometric.utils import to_undirected, negative_sampling
 import torch.utils.data as utils
 from SGRN.GAEHelpers import *
 import SGRN.GAERunner as GR
-
+from SGRN.makeInputs import *
 
 
 
@@ -107,8 +108,10 @@ def run(RunnerObj, fID):
     
     #exprDF = pd.read_csv(RunnerObj.inputDir.joinpath("normExp.csv"), header = 0, index_col =0)
     # NOTE: CNNC requires non-standarized expression data as input 
-    exprDF = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.exprData),
-                                         header = 0, index_col = 0)
+    #exprDF = pd.read_csv(RunnerObj.inputDir.joinpath(RunnerObj.exprData),
+    #                                     header = 0, index_col = 0)
+    exprDF, expr_genes = preprocess_expr(RunnerObj)
+    exprDF.index = exprDF.index.str.upper()
     posE = np.load(RunnerObj.inputDir.joinpath("posE.npy"))
     negE = np.load(RunnerObj.inputDir.joinpath("negE.npy"))
     
@@ -187,6 +190,7 @@ def run(RunnerObj, fID):
         # Compute features for negative examples because
         # storing the pre-computed negatives is prohibitive
 
+        # keyerror TBX4 nEdge[1] not inside exprDF
         trNeg =  np.zeros((len(train_negIdx), 32, 32))
         for idx in tqdm(range(len(train_negIdx))):
             edgeId = train_negIdx[idx]
