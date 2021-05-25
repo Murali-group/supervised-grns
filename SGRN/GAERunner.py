@@ -105,6 +105,11 @@ def run(RunnerObj, fID):
     #print(val_posIdx,val_negIdx)
     sourceNodes = posE[train_posIdx , 0]
     targetNodes = posE[train_posIdx , 1]
+
+    #Additionally, create a copy of sourceNodes and targetNodes 
+    #which would contain only the nodes present in the network without additional dummy edges
+    sourceNodesCPY = posE[train_posIdx , 0]
+    targetNodesCPY = posE[train_posIdx , 1]
     
     presentNodesSet = set(sourceNodes).union(set(targetNodes))
     allNodes = set(nodeDict.item().keys())
@@ -149,14 +154,14 @@ def run(RunnerObj, fID):
     if RunnerObj.params['encoder'] == 'GCN':
         data.train_pos_edge_index = to_undirected(torch.stack([torch.LongTensor(sourceNodes),
                                                                torch.LongTensor(targetNodes)], dim=0))
-        data.train_pos_only_edge_index = torch.stack([torch.LongTensor(sourceNodes),
-                                                      torch.LongTensor(targetNodes)], dim=0)
+        data.train_pos_only_edge_index = torch.stack([torch.LongTensor(sourceNodesCPY),
+                                                      torch.LongTensor(targetNodesCPY)], dim=0)
 
     elif RunnerObj.params['encoder'] == 'DGCN':
         data.train_pos_edge_index = torch.stack([torch.LongTensor(sourceNodes),
                                                  torch.LongTensor(targetNodes)], dim=0)
-        data.train_pos_only_edge_index = torch.stack([torch.LongTensor(sourceNodes),
-                                                      torch.LongTensor(targetNodes)], dim=0)
+        data.train_pos_only_edge_index = torch.stack([torch.LongTensor(sourceNodesCPY),
+                                                      torch.LongTensor(targetNodesCPY)], dim=0)
     else:
         print("Invalid encoder name: ", RunnerObj.params.encoder)
         sys.exit()
