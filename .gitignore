@@ -4,3 +4,4 @@ SGRN/*.csv
 *.sh
 inputs/**
 outputs/**
+data/**
