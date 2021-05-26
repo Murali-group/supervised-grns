@@ -66,7 +66,7 @@ def main():
 
     for idx in range(len(evaluation.runners)):
         start_time = time.process_time()
-        logging.info("Training started with randSeed=%s, hidden layers=%s"%(evaluation.runners[idx].randSeed))
+        logging.info("Training started with randSeed=%s"%(evaluation.runners[idx].randSeed))
         evaluation.runners[idx].run()
         logging.info("Training for randSeed=%s completed in %.3f seconds"%(evaluation.runners[idx].randSeed, time.process_time()-start_time))
         
