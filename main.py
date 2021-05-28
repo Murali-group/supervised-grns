@@ -69,7 +69,7 @@ def main():
 
         for idx in range(len(evaluation.runners)):
             start_time = time.process_time()
-            logging.info("Training started with parameters=%s"%(str(evaluation.runners[idx].params)))
+            logging.info("Training started for randSeed=%s with parameters=%s"%(evaluation.runners[idx].randSeed, str(evaluation.runners[idx].params)))
             evaluation.runners[idx].run()
             logging.info("Training completed in %.3f seconds"%(time.process_time()-start_time))
             
