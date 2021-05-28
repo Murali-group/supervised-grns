@@ -53,27 +53,34 @@ def parse_arguments():
     return opts
 
 def main():
-    opts = parse_arguments()
-    config_file = opts.config
+
+    try:
+        opts = parse_arguments()
+        config_file = opts.config
 
 
-    with open(config_file, 'r') as conf:
-        evaluation = sr.ConfigParser.parse(conf)
-    print('\n Evaluation started\n')
+        with open(config_file, 'r') as conf:
+            evaluation = sr.ConfigParser.parse(conf)
+        print('\n Evaluation started\n')
+        logging.info("Evaluation started")
 
-    for idx in range(len(evaluation.runners)):
-        evaluation.runners[idx].generateInputs()
+        for idx in range(len(evaluation.runners)):
+            evaluation.runners[idx].generateInputs()
 
-    for idx in range(len(evaluation.runners)):
-        start_time = time.process_time()
-        logging.info("Training started with randSeed=%s"%(evaluation.runners[idx].randSeed))
-        evaluation.runners[idx].run()
-        logging.info("Training for randSeed=%s completed in %.3f seconds"%(evaluation.runners[idx].randSeed, time.process_time()-start_time))
-        
-    for idx in range(len(evaluation.runners)):
-        evaluation.runners[idx].parseOutput()
-  
-    print('\n Evaluation complete!\n')
+        for idx in range(len(evaluation.runners)):
+            start_time = time.process_time()
+            logging.info("Training started with parameters=%s"%(str(evaluation.runners[idx].params)))
+            evaluation.runners[idx].run()
+            logging.info("Training completed in %.3f seconds"%(time.process_time()-start_time))
+            
+        for idx in range(len(evaluation.runners)):
+            evaluation.runners[idx].parseOutput()
+
+        logging.info("Evaluation complete!")
+        print('\n Evaluation complete!\n')
+    except:
+        logging.exception('ERROR occurred...quitting. Check log file for errors.')
+        raise
 
 
 if __name__ == '__main__':
