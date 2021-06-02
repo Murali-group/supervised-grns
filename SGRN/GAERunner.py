@@ -234,30 +234,46 @@ def run(RunnerObj, fID):
     yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
     testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
     edgeLength = testIndices.shape[1]
-    outMatrix = np.vstack((testIndices, yTrue, yPred, np.array([fID]*edgeLength)))
+    outMatrix = np.vstack((testIndices, yTrue, yPred, np.array([fID]*edgeLength), np.array([RunnerObj.params['hidden']]*edgeLength), np.array([RunnerObj.params['channels']]*edgeLength)))
     if not os.path.exists(RunnerObj.outPrefix):
         os.mkdir(RunnerObj.outPrefix)
     fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder'])
     if not os.path.exists(fullPath):
         os.makedirs(fullPath)
     output_path =  fullPath / 'rankedEdges.csv'
-    if os.path.isfile(output_path) and fID == 0:
-        print("File exists, cleaning up")
-        os.remove(output_path)
-    outDF = pd.DataFrame(outMatrix.T, columns=['Gene1','Gene2','TrueScore','PredScore', 'CVID'])
-    outDF = outDF.astype({'Gene1': int,'Gene2': int, 'CVID': int})
+    training_stats_file_name = fullPath / 'trainingstats.csv'
+    #if os.path.isfile(output_path) and fID == 0:
+        #print("File exists, cleaning up")
+        #os.remove(output_path)
+    outDF = pd.DataFrame(outMatrix.T, columns=['Gene1','Gene2','TrueScore','PredScore', 'CVID', 'HiddenLayers', 'Channels'])
+    outDF = outDF.astype({'Gene1': int,'Gene2': int, 'CVID': int, 'HiddenLayers': int, 'Channels': int})
     #print(outDF.head())
     outDF['Gene1'] = outDF.Gene1.map(nodeDict.item())
     outDF['Gene2'] = outDF.Gene2.map(nodeDict.item())
     outDF.to_csv(output_path, index=False, mode='a', header=not os.path.exists(output_path))
+
+    if os.path.isfile(training_stats_file_name):
+        training_stats_file = open(training_stats_file_name,'a')
+        training_stats_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(fID, RunnerObj.params['encoder']+'-'+RunnerObj.params['decoder'], RunnerObj.randSeed, RunnerObj.params['hidden'], \
+            RunnerObj.params['channels'], len(presentNodesSet), len(allNodes), len(set(missingNodes)), len(missingTFs),  len(presentTFs),
+            len(onlyTFs),len(sourceNodesCPY),len(sourceNodes), len(train_negIdx), len(test_posIdx), len(test_negIdx), len(val_posIdx), len(val_negIdx)))
+    else:
+        training_stats_file = open(training_stats_file_name, 'w')
+        training_stats_file.write('Fold\tAlgorithm\trandID\t#HiddenLayers\tChannels\tPresentNodes\tAllNodes\tMissingNodes\tMissingTFs\tPresentTFs\tOnlyTFs\tPositiveTrainingEdges \
+            \tPositiveTrainingEdgesWithDummyEdges\tNegativeTrainingEdges\tPositiveTestEdges\tNegativeTestEdges\tPositiveValidationEdges\tNegativeValidationEdges\n')
+        training_stats_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(fID, RunnerObj.params['encoder']+'-'+RunnerObj.params['decoder'], RunnerObj.randSeed, RunnerObj.params['hidden'], \
+            RunnerObj.params['channels'], len(presentNodesSet), len(allNodes), len(set(missingNodes)), len(missingTFs),  len(presentTFs),
+            len(onlyTFs),len(sourceNodesCPY),len(sourceNodes), len(train_negIdx), len(test_posIdx), len(test_negIdx), len(val_posIdx), len(val_negIdx)))
     
     
 
 def parseOutput(RunnerObj):
     if RunnerObj.name == 'GAE':
         algName = RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder']
+        gae = True
     else:
         algName = RunnerObj.name
+        gae = False
            
     # Check if outfile exists
     fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + algName)
@@ -266,6 +282,13 @@ def parseOutput(RunnerObj):
         return 
     
     inDF = pd.read_csv(fullPath/'rankedEdges.csv', index_col = None, header = 0)
+
+    if gae:
+        hidden_layers = RunnerObj.params['hidden']
+        channels = RunnerObj.params['channels']
+        #Filter rows for current parameters
+        inDF = inDF[(inDF['HiddenLayers'] == hidden_layers) & (inDF['Channels'] == channels)]
+        inDF.reset_index(inplace=True) 
     
     inDFAgg = inDF.sort_values('PredScore', ascending=False).drop_duplicates(subset=['Gene1','Gene2'], keep = 'first')
     
@@ -276,13 +299,23 @@ def parseOutput(RunnerObj):
     statsAgg = Path(str(RunnerObj.outPrefix)) / "statsAggregated.csv".format(RunnerObj.randSeed)
     AUPRC, AUROC = computePRROC(inDFAgg.TrueScore, inDFAgg.PredScore)
 
-    if os.path.isfile(statsAgg):
-        outfile = open(statsAgg,'a')
-        outfile.write('{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+    if gae:
+        if os.path.isfile(statsAgg):
+            outfile = open(statsAgg,'a')
+            outfile.write('{}\t{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, RunnerObj.params['hidden'], RunnerObj.params['channels'], earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+        else:
+            outfile = open(statsAgg, 'w')
+            outfile.write('Algorithm\trandID\t#HiddenLayers\tChannels\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+            outfile.write('{}\t{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, RunnerObj.params['hidden'], RunnerObj.params['channels'], earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+        
     else:
-        outfile = open(statsAgg, 'w')
-        outfile.write('Algorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
-        outfile.write('{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+        if os.path.isfile(statsAgg):
+            outfile = open(statsAgg,'a')
+            outfile.write('{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg,  AUPRC, AUROC,  inDFAgg.TrueScore.sum(), inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+        else:
+            outfile = open(statsAgg, 'w')
+            outfile.write('Algorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+            outfile.write('{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(algName, RunnerObj.randSeed, earlyPrecAgg, avgPrecAgg, AUPRC, AUROC, inDFAgg.TrueScore.sum(),  inDFAgg.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
         
         
     # Write per-fold statistics
@@ -293,17 +326,30 @@ def parseOutput(RunnerObj):
         avgPrec = average_precision_score(subDF.TrueScore, subDF.PredScore)
         statsperFold = Path(str(RunnerObj.outPrefix)) / "statsperFold.csv".format(RunnerObj.randSeed)
     
-        if os.path.isfile(statsperFold):
-            outfile = open(statsperFold,'a')
-            outfile.write('{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
-                                                       earlyPrec, avgPrec, AUPRC, AUROC, subDF.TrueScore.sum(),
-                                                       subDF.shape[0], RunnerObj.CVType,str(RunnerObj.params)))
+        if gae:
+            if os.path.isfile(statsperFold):
+                outfile = open(statsperFold,'a')
+                outfile.write('{}\t{}\t{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed, RunnerObj.params['hidden'], RunnerObj.params['channels'],
+                                                           earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
+                                                           subDF.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+            else:
+                outfile = open(statsperFold, 'w')
+                outfile.write('Fold\tAlgorithm\trandID\t#HiddenLayers\tChannels\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+                outfile.write('{}\t{}\t{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed, RunnerObj.params['hidden'], RunnerObj.params['channels'],
+                                                           earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
+                                                           subDF.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
         else:
-            outfile = open(statsperFold, 'w')
-            outfile.write('Fold\tAlgorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
-            outfile.write('{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
-                                                       earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
-                                                       subDF.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
-            
+            if os.path.isfile(statsperFold):
+                outfile = open(statsperFold,'a')
+                outfile.write('{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
+                                                           earlyPrec, avgPrec, AUPRC, AUROC, subDF.TrueScore.sum(),
+                                                           subDF.shape[0], RunnerObj.CVType,str(RunnerObj.params)))
+            else:
+                outfile = open(statsperFold, 'w')
+                outfile.write('Fold\tAlgorithm\trandID\tEarly Precision\tAverage Precision\tAUPRC\tAUROC\t#positives\t#edges\tCVType\tParameters\n')
+                outfile.write('{}\t{}\t{}\t{:.3f}\t{:.3f}\t{:.3f}\t{:.3f}\t{}\t{}\t{}\t{}\n'.format(cvid, algName, RunnerObj.randSeed,
+                                                           earlyPrec, avgPrec, AUPRC, AUROC,  subDF.TrueScore.sum(),
+                                                           subDF.shape[0],RunnerObj.CVType,str(RunnerObj.params)))
+                
     return 
 

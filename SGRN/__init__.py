@@ -28,6 +28,8 @@ from SGRN.runner import Runner
 import os
 import pandas as pd
 import random
+import logging
+import shutil
         
 class InputSettings(object):
     def __init__(self,
@@ -191,7 +193,30 @@ class ConfigParser(object):
         output_dir = Path(output_settings_map['output_dir'])
         output_prefix = Path(output_settings_map['output_prefix'])
 
+        ConfigParser.__create_logger(output_dir, output_prefix)
+
         return OutputSettings(output_dir,
                              output_prefix)
+
+    @staticmethod
+    def __create_logger(output_dir, output_prefix):
+        outputPath = Path(str(output_dir) + '/' + str(output_prefix))
+        if os.path.exists(outputPath):
+            print("Cleaning up old files...")
+            shutil.rmtree(outputPath)
+
+        os.makedirs(outputPath)
+        print("Created output folder...")
+
+        logFile = os.path.join(outputPath, 'log.txt')
+        if not os.path.exists(logFile):
+
+            logging.basicConfig(handlers=[logging.FileHandler(filename=Path(str(outputPath) + '/' + 'log.txt'), 
+                                                         encoding='utf-8', mode='a+')],
+                            format="%(asctime)s %(levelname)s:%(message)s", 
+                            datefmt='%m/%d/%Y %I:%M:%S %p %Z', 
+                            level=logging.INFO)
+
+        return
 
 

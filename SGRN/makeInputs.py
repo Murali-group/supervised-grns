@@ -23,19 +23,6 @@ def generateInputs(RunnerObj):
     
     print(RunnerObj.__dict__)
     
-    #create a logging file
-    if not os.path.exists(RunnerObj.outPrefix):
-        os.makedirs(RunnerObj.outPrefix)  
-    
-    logFile = os.path.join(RunnerObj.outPrefix, 'log.txt')
-    if not os.path.exists(logFile):
-
-        logging.basicConfig(handlers=[logging.FileHandler(filename=os.path.join(RunnerObj.outPrefix, 'log.txt'), 
-                                                     encoding='utf-8', mode='a+')],
-                        format="%(asctime)s %(levelname)s:%(message)s", 
-                        datefmt='%m/%d/%Y %I:%M:%S %p %Z', 
-                        level=logging.INFO)
-    
     if not RunnerObj.inputDir.joinpath("{}CV".format(RunnerObj.CVType)).exists():
         print("Input folder does not exist: creating inputs")
         RunnerObj.inputDir.joinpath("{}CV".format(RunnerObj.CVType)).mkdir(exist_ok = False)
