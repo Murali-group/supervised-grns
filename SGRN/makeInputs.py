@@ -253,13 +253,18 @@ def generateInputs(RunnerObj):
             test_posIdx = np.array([],dtype = int)
             #count positives for each edge
             tfIDDict = {}
+            #for source nodes in test_index, all edges outgoing from them will be part of test_posIdx
             for tfID in sNodes:
                 newArr = np.where(np.isin(posE,tfID))[0]
                 test_posIdx = np.hstack((test_posIdx,newArr))
                 tfIDDict[tfID] = len(newArr)
-            test_posIdx = np.unique(test_posIdx)
+            test_posIdx = np.unique(test_posIdx) 
+            #train_posIdx will contain positive edges minus test_posIdx edges
             train_posIdx = np.setdiff1d(np.arange(0,len(posE)),test_posIdx)
             
+            #Since number of negative edges can be a huge number, we sample it in the following way -
+            #for source nodes in test_index, we randomly sample as many outgoing edges from the node in nTest as there are from that node in test_posIdx
+            #This is to keep |N_test| = |P_test|
             all_test_negIdx = np.array([],dtype = int)
             test_negIdx = np.array([],dtype = int)
             for tfID in sNodes:
