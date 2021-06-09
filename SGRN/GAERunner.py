@@ -25,6 +25,7 @@ import numpy as np
 import torchvision
 import logging
 import time
+from sklearn.metrics import f1_score
 
 
 from torch.utils.tensorboard import SummaryWriter
@@ -76,6 +77,7 @@ def run(RunnerObj, fID):
 
     print("\n Running fold: ", fID)
     start = time.process_time()
+    early_stopping = EarlyStopping(patience=100)
 
     print("Reading necessary input files...")
     
@@ -212,42 +214,60 @@ def run(RunnerObj, fID):
 
     val_pos_edge_index, val_neg_edge_index = data.val_pos_edge_index.to(dev), data.val_neg_edge_index.to(dev)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+
     lossDict = {'epoch':[],'TrLoss':[], 'valLoss':  []}
     last10Models = []
     print("Running  %s-%s..." %(RunnerObj.params['encoder'],RunnerObj.params['decoder']))
 
-    for epoch in tqdm(range(1, RunnerObj.params['epochs'])):
-        TrLoss = train()
-        
-        valLoss = val(val_pos_edge_index, val_neg_edge_index)
-        #print(los.item())
-        lossDict['epoch'].append(epoch)
-        lossDict['TrLoss'].append(TrLoss.item())
-        lossDict['valLoss'].append(valLoss.item())
-        # Run until validation loss stabilizes after a certain minimum number of epochs.
-        if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > RunnerObj.params['min_epochs']:
-            break
-
-    logging.info("[Fold %s]: %.3f seconds in %s epochs" %(fID, time.process_time()-start, epoch))
-
-    yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
-    testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
-    edgeLength = testIndices.shape[1]
-    outMatrix = np.vstack((testIndices, yTrue, yPred, np.array([fID]*edgeLength), np.array([RunnerObj.params['hidden']]*edgeLength), np.array([RunnerObj.params['channels']]*edgeLength)))
     if not os.path.exists(RunnerObj.outPrefix):
         os.mkdir(RunnerObj.outPrefix)
     fullPath = Path(str(RunnerObj.outPrefix) + '/randID-' +  str(RunnerObj.randSeed) + '/' + RunnerObj.params['encoder'] + '-' +RunnerObj.params['decoder'])
     if not os.path.exists(fullPath):
         os.makedirs(fullPath)
+
+    training_summary_path = os.path.join(fullPath, 'trainingSummary', 'hiddenlayer-'+str(RunnerObj.params['hidden']))
+    if not os.path.exists(training_summary_path):
+        os.makedirs(training_summary_path)
+
+    writer  = SummaryWriter(os.path.join(training_summary_path, 'fold-'+str(fID)))
+
+    for epoch in tqdm(range(1, RunnerObj.params['epochs'])):
+        TrLoss = train()
+        valLoss = val(val_pos_edge_index, val_neg_edge_index)
+        
+        lossDict['epoch'].append(epoch)
+        lossDict['TrLoss'].append(TrLoss.item())
+        lossDict['valLoss'].append(valLoss.item())
+        
+
+        #print(TrLoss.item(), valLoss.item())
+
+        writer.add_scalar("TrainingLoss/train", TrLoss.item(), epoch)
+        writer.add_scalar("ValLoss/train", valLoss.item(), epoch)
+        
+        early_stopping(valLoss.item())
+        if early_stopping.early_stop:
+            break
+
+
+        #if np.mean(lossDict['valLoss'][-10:]) - valLoss.item()<= 1e-6 and epoch > RunnerObj.params['min_epochs']:
+            #break
+
+    logging.info("[Fold %s]: %.3f seconds in %s epochs" %(fID, time.process_time()-start, epoch))
+    writer.flush()
+
+    yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
+    testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
+    edgeLength = testIndices.shape[1]
+    outMatrix = np.vstack((testIndices, yTrue, yPred, np.array([fID]*edgeLength), np.array([RunnerObj.params['hidden']]*edgeLength), np.array([RunnerObj.params['channels']]*edgeLength)))
+    
     output_path =  fullPath / 'rankedEdges.csv'
     training_stats_file_name = fullPath / 'trainingstats.csv'
-    #if os.path.isfile(output_path) and fID == 0:
-        #print("File exists, cleaning up")
-        #os.remove(output_path)
+    
     outDF = pd.DataFrame(outMatrix.T, columns=['Gene1','Gene2','TrueScore','PredScore', 'CVID', 'HiddenLayers', 'Channels'])
     outDF = outDF.astype({'Gene1': int,'Gene2': int, 'CVID': int, 'HiddenLayers': int, 'Channels': int})
-    #print(outDF.head())
+    
     outDF['Gene1'] = outDF.Gene1.map(nodeDict.item())
     outDF['Gene2'] = outDF.Gene2.map(nodeDict.item())
     outDF.to_csv(output_path, index=False, mode='a', header=not os.path.exists(output_path))
@@ -265,7 +285,7 @@ def run(RunnerObj, fID):
             RunnerObj.params['channels'], len(presentNodesSet), len(allNodes), len(set(missingNodes)), len(missingTFs),  len(presentTFs),
             len(onlyTFs),len(sourceNodesCPY),len(sourceNodes), len(train_negIdx), len(test_posIdx), len(test_negIdx), len(val_posIdx), len(val_negIdx)))
     
-    
+    writer.close()
 
 def parseOutput(RunnerObj):
     if RunnerObj.name == 'GAE':
