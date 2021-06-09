@@ -142,7 +142,7 @@ def run(RunnerObj, fID):
     
             
     nodeFeatures = torch.Tensor(exprDF.values)
-    
+
     if RunnerObj.params['encoder'] == 'GCN':
         eIndex = to_undirected(torch.LongTensor([sourceNodes, targetNodes]))
     elif RunnerObj.params['encoder'] == 'DGCN':
@@ -258,6 +258,8 @@ def run(RunnerObj, fID):
     writer.flush()
 
     yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
+    torch.save(model.state_dict(), os.path.join(training_summary_path, 'model'))
+    
     testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
     edgeLength = testIndices.shape[1]
     outMatrix = np.vstack((testIndices, yTrue, yPred, np.array([fID]*edgeLength), np.array([RunnerObj.params['hidden']]*edgeLength), np.array([RunnerObj.params['channels']]*edgeLength)))
