@@ -79,6 +79,7 @@ def run(RunnerObj, fID):
     start = time.process_time()
     early_stopping = EarlyStopping(patience=100)
 
+    read_time = time.process_time()
     print("Reading necessary input files...")
     
     exprDF = pd.read_csv(RunnerObj.inputDir.joinpath("normExp.csv"), header = 0, index_col =0)
@@ -98,7 +99,9 @@ def run(RunnerObj, fID):
     test_negIdx = foldData.item().get('test_negIdx')
 
     print("Done reading inputs...")
-    
+    logging.info("Reading input files took %.3f seconds" %(time.process_time()-read_time))
+
+    setup_time = time.process_time()
     val_posIdx = random.sample(list(train_posIdx), int(0.1*len(train_posIdx)))
     train_posIdx = list(set(train_posIdx).difference(set(val_posIdx)))
 
@@ -183,7 +186,7 @@ def run(RunnerObj, fID):
                                            torch.LongTensor(negE[val_negIdx,1])], dim=0)
 
     print("Done setting up data structures...")
-
+    logging.info("Setting up data structures took %.3f seconds" %(time.process_time-setup_time))
     channels = RunnerObj.params['channels']
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -246,7 +249,7 @@ def run(RunnerObj, fID):
         writer.add_scalar("TrainingLoss/train", TrLoss.item(), epoch)
         writer.add_scalar("ValLoss/train", valLoss.item(), epoch)
         print(TrLoss.item(), valLoss.item())
-        
+
         early_stopping(valLoss.item())
         if early_stopping.early_stop:
             break
