@@ -186,7 +186,7 @@ def run(RunnerObj, fID):
                                            torch.LongTensor(negE[val_negIdx,1])], dim=0)
 
     print("Done setting up data structures...")
-    logging.info("Setting up data structures took %.3f seconds" %(time.process_time-setup_time))
+    logging.info("Setting up data structures took %.3f seconds" %(time.process_time()-setup_time))
     channels = RunnerObj.params['channels']
     
     dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
