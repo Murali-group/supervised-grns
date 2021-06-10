@@ -214,7 +214,7 @@ def run(RunnerObj, fID):
 
     val_pos_edge_index, val_neg_edge_index = data.val_pos_edge_index.to(dev), data.val_neg_edge_index.to(dev)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-4)
 
     lossDict = {'epoch':[],'TrLoss':[], 'valLoss':  []}
     last10Models = []
@@ -245,6 +245,7 @@ def run(RunnerObj, fID):
 
         writer.add_scalar("TrainingLoss/train", TrLoss.item(), epoch)
         writer.add_scalar("ValLoss/train", valLoss.item(), epoch)
+        print(TrLoss.item(), valLoss.item())
         
         early_stopping(valLoss.item())
         if early_stopping.early_stop:
