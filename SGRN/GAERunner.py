@@ -262,7 +262,7 @@ def run(RunnerObj, fID):
     writer.flush()
 
     yTrue, yPred = test(data.test_pos_edge_index, data.test_neg_edge_index)
-    torch.save(model.state_dict(), os.path.join(training_summary_path, 'model'))
+    torch.save(model.state_dict(), os.path.join(training_summary_path, 'fold-'+str(fID), 'model'))
     
     testIndices = torch.cat((data.test_pos_edge_index, data.test_neg_edge_index), axis=1).detach().cpu().numpy()
     edgeLength = testIndices.shape[1]
