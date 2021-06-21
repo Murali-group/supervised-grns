@@ -23,7 +23,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument('--org', default='hsapiens', help='Organism name. Has to be either hsapiens or mmusculus.')
     
     
-    parser.add_argument('--outPath', default='inputs/datasets/emtabHESC_500hvg/emtabHESC_500hvg.csv', help='Expression file name for writing output.')
+    parser.add_argument('--outPath', default='inputs/datasets/', help='Expression file name for writing output.')
     
     
     parser.add_argument('--hvg', type=int, default=500, help='Number of highly varying genes.')
@@ -145,10 +145,11 @@ def main():
 
     print(f"\nNumber of cells and genes after converting from Ensembl to gene IDs: {str(aDFNew.shape[1])} cells and {str(aDFNew.shape[0])} genes\n")
     
-    print(f"Writing output to: {opts.outPath}")
+    outPath = os.path.join(opts.outPath, opts.emtab+'-'+str(opts.hvg), opts.emtab+'-'+str(opts.hvg)+'.csv')
+    print(f"Writing output to: {outPath}")
     
-    os.makedirs(Path('/'.join(opts.outPath.split('/')[:-1])), exist_ok=True)
-    aDFNew.to_csv(opts.outPath)
+    os.makedirs(Path('/'.join(outPath.split('/')[:-1])), exist_ok=True)
+    aDFNew.to_csv(outPath)
 
     print("\nDone\n")
 
