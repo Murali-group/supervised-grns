@@ -27,7 +27,8 @@ We recommend using an [Anaconda](https://www.anaconda.com/) environment to run t
 
 
 * In this step, we will install ```PyTorch``` library along with the necessary dependencies.
-  * Install PyTorch in your environment with the following command - ```conda install -c pytorch pytorch```
+  * Install PyTorch in your environment with the following command - 
+    ```conda install -c pytorch pytorch=1.8.0```
   * Check if PyTorch is installed and check the version. You should get an output like this -
     ``` bash 
     python -c "import torch; print(torch.__version__)"

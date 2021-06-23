@@ -12,7 +12,7 @@ import sys
 import torch
 import torch.nn.functional as F
 import torch_geometric.transforms as T
-from torch_geometric.nn import GCNConv, GAE, VGAE
+from torch_geometric.nn import GCNConv, GAE, VGAE, GATConv
 from torch_geometric.data import InMemoryDataset
 from torch_geometric.data import Data
 from sklearn.decomposition import PCA
@@ -75,6 +75,37 @@ def sparse_to_tuple(sparse_mx):
     return coords, values, shape
 
 
+class EarlyStopping():
+    """
+    Early stopping to stop the training when the loss does not improve after
+    certain epochs.
+    """
+    def __init__(self, patience=100):
+        """
+        :param patience: how many epochs to wait before stopping when loss is
+               not improving
+        """
+        self.patience = patience
+        self.counter = 0
+        self.best_loss = None
+        self.early_stop = False
+
+    def __call__(self, val_loss):
+
+        if self.best_loss is None:
+            self.best_loss = val_loss
+
+        if val_loss < self.best_loss:
+            # keep track of the best validation loss so far
+            self.best_loss = min(val_loss, self.best_loss)
+            self.counter = 0  # reset the counter every time we encounter new best validation loss
+        else:
+            self.counter += 1  # otherwise keep counting
+
+        print("Patience count = %s"%self.counter)
+        if self.counter >= self.patience:
+            print('INFO: Early stopping')
+            self.early_stop = True
 
 class GAEwithK(torch.nn.Module):
     r"""The Graph Auto-Encoder model from the
@@ -153,7 +184,7 @@ class GAEwithK(torch.nn.Module):
         #pd.DataFrame([pr, rec, thresholds], index = ['pr','rec','thres']).T.to_csv('pr.csv')
         return trueY, predY #precision_at_k(y, pred, pos_edge_index.size(1)),average_precision_score(y, pred), pred, y
 
-    
+
 
 class Encoder(torch.nn.Module):
     def __init__(self, h_sizes):
@@ -208,8 +239,13 @@ class RESCALDecoder(torch.nn.Module):
 
 def computePRROC(yTrue, yPred):
     prroc = importr('PRROC')
-    prCurve = prroc.pr_curve(scores_class0 = FloatVector(list(yPred)), 
-              weights_class0 = FloatVector(list(yTrue)), curve=True)
+    curve=True
+    try:
+        prCurve = prroc.pr_curve(scores_class0 = FloatVector(list(yPred)), 
+                  weights_class0 = FloatVector(list(yTrue)), curve=curve)
+    except:
+        prCurve = prroc.pr_curve(scores_class0 = FloatVector(list(yPred)), 
+                  weights_class0 = FloatVector(list(yTrue)), curve=not curve)
 
 
     fpr, tpr, thresholds = roc_curve(y_true=yTrue,
